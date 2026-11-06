@@ -281,19 +281,25 @@ function layoutHTML(s) {
           })
           .join('')}</div>`;
 
-    case 'compare':
+    case 'compare': {
+      const valFs = (v) => {
+        const n = String(v || '').length;
+        return n > 10 ? Math.max(38, 54 - (n - 10) * 4) : 54;
+      };
+      const fs = Math.min(valFs(s.left?.value), valFs(s.right?.value));
       return `${k(0)}${h2(90)}
         <div class="cols">
           <div class="col anim" style="--d:200">
             <div class="label">${esc(s.left?.label ?? '')}</div>
-            <div class="value">${esc(s.left?.value ?? '')}</div>
+            <div class="value" style="--fs:${fs}px">${esc(s.left?.value ?? '')}</div>
           </div>
           <div class="vs anim" style="--d:300">vs</div>
           <div class="col anim" style="--d:340">
             <div class="label">${esc(s.right?.label ?? '')}</div>
-            <div class="value">${esc(s.right?.value ?? '')}</div>
+            <div class="value" style="--fs:${fs}px">${esc(s.right?.value ?? '')}</div>
           </div>
         </div>`;
+    }
 
     case 'steps':
       return `${k(0)}${h2(90)}
@@ -959,7 +965,14 @@ function processChunk(chunk) {
     }
   }
 
-  if (vad.active && vad.segLen > SR * 0.9 && !pendingPartial && performance.now() - vad.partialAt > 700) {
+  // 已经在静音尾部时别再发新 partial：收句马上就到，发了也只会挡住 final。
+  if (
+    vad.active &&
+    vad.silence < SR * 0.15 &&
+    vad.segLen > SR * 0.9 &&
+    !pendingPartial &&
+    performance.now() - vad.partialAt > 700
+  ) {
     firePartial();
   }
 }

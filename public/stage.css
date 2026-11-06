@@ -156,7 +156,7 @@ h1, h2 { margin: 0; font-weight: 700; letter-spacing: -0.012em; line-height: 1.0
   font-size: 19px; letter-spacing: 0.28em; text-transform: uppercase;
   color: var(--dim); margin-bottom: 26px;
 }
-.l-compare .value { font-size: 54px; line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; }
+.l-compare .value { font-size: var(--fs, 54px); line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; }
 .l-compare .vs { padding-top: 38px; }
 .l-compare .col:first-child .value { color: var(--dim); }
 .l-compare .col:last-child .value { color: var(--accent); }
