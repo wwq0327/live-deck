@@ -74,6 +74,7 @@ Content-Type: application/json
 - 完整结果仍由 `done` 送达；`result` 的字段与 `/api/direct` 完全一致。
 - 没有 Key、上游报错、超时都仍会走 `heuristic`/`fallback`，只发 `done`，不会让流悬挂。
 - 当前只流式送 `title`；正文（points/stat/left/right）仍要等完整 JSON。
+- 正文流式试过一版：从累积 JSON 里提前抽 body，等字段齐了再发 `partial`。实测只比 `done` 早 3–75ms（`left/right`、`stats`、`points` 都在 JSON 尾部），已回退，没有保留。要更早只能改输出顺序或做骨架渲染，属于另一个设计取舍。
 
 ## action 的语义
 
