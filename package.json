@@ -1,0 +1,29 @@
+{
+  "name": "live-deck",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Live Deck — 边说边长的幻灯片：本地流式转写 + 小模型实时导演 + 模板渲染",
+  "keywords": [
+    "llm",
+    "speech-to-text",
+    "presentation",
+    "realtime",
+    "sensevoice",
+    "deepseek"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "check": "node --check server.mjs && node --check director.mjs && node --check asr.mjs && node --check public/stage.js && node --check public/pcm-worklet.js"
+  },
+  "author": "walt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wwq0327/live-deck.git"
+  },
+  "homepage": "https://github.com/wwq0327/live-deck"
+}

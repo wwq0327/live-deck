@@ -1,0 +1,26 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run check
+      # 页面能起来、健康检查能返回（没有密钥时会走本地规则，不影响启动）
+      - name: smoke test
+        run: |
+          node server.mjs &
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:4400/api/health > /tmp/health.json; then break; fi
+            sleep 0.5
+          done
+          cat /tmp/health.json
+          node -e "const h=require('/tmp/health.json'); if(!h.ok) process.exit(1)"

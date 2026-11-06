@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live Deck · 说到哪，画到哪</title>
+<link rel="stylesheet" href="/stage.css">
+</head>
+<body>
+  <div id="bg"></div>
+
+  <main id="stage">
+    <div id="glow"></div>
+    <div id="deck"></div>
+  </main>
+
+  <div id="live">
+    <i class="dot"></i><span id="live-label">实时导演</span>
+    <span id="lat">—</span>
+  </div>
+
+  <div id="idx">00</div>
+
+  <div id="caption"><span id="cap"></span></div>
+
+  <div id="diag">
+    <span class="x" id="diag-x">✕</span>
+    <h4>麦克风打不开</h4>
+    <div class="rows" id="diag-rows"></div>
+    <ol>
+      <li>点地址栏左边的小锁（或滑块）图标 → 麦克风 → 允许 → 刷新页面</li>
+      <li>macOS：系统设置 → 隐私与安全性 → 麦克风 → 把正在用的浏览器勾上（勾完要退出浏览器重开）</li>
+      <li>如果这个页面是从别的应用里点开的，换成 Chrome 新标签页直接打开 <b>http://127.0.0.1:4400</b></li>
+      <li>急着看效果就把一段录音（wav / mp3 / m4a）<b>拖进这个页面</b>，我用同一条管线跑一遍</li>
+    </ol>
+    <div class="acts"><button id="diag-retry">改好了，再试一次</button></div>
+  </div>
+
+  <div id="bar">
+    <button id="mic" title="麦克风（M）">麦克风</button>
+    <input id="input" placeholder="也可以直接打字，回车出页" autocomplete="off">
+    <button id="go">出页</button>
+    <button id="demo" title="演示（D）">演示</button>
+    <button id="reset" title="清空（R）">清空</button>
+  </div>
+
+  <script type="module" src="/stage.js"></script>
+</body>
+</html>

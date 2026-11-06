@@ -1,0 +1,19 @@
+# 运行时产物
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# 模型文件（几百 MB，别进仓库）
+models/
+
+# 调试截图与录音
+shots/
+*.wav
+!public/sample.wav
+
+# 系统 / 编辑器
+.DS_Store
+*.log
+.idea/
+.vscode/
