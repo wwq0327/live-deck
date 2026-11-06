@@ -130,6 +130,21 @@ test('合法请求在无 Key 时走本地规则', async () => {
   assert.equal(body.stat.value, '10');
 });
 
+test('流式接口在无 Key 时也返回 done 事件', async () => {
+  const r = await request('/api/direct/stream', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ transcript: '日活 10 万' }),
+  });
+  assert.equal(r.status, 200);
+  assert.match(r.headers['content-type'], /application\/x-ndjson/);
+  const lines = r.body.trim().split('\n').filter(Boolean).map((x) => JSON.parse(x));
+  const done = lines.find((x) => x.type === 'done');
+  assert.ok(done);
+  assert.equal(done.result.source, 'heuristic');
+  assert.equal(done.result.layout, 'stat');
+});
+
 test('HEAD 不写 body，wav 有正确 MIME', async () => {
   const head = await request('/', { method: 'HEAD' });
   assert.equal(head.status, 200);

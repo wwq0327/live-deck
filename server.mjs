@@ -109,7 +109,7 @@ const server = createServer(async (req, res) => {
       return send(res, 200, JSON.stringify({ ...out, mode }));
     }
 
-    if (url.pathname === '/api/direct' && req.method === 'POST') {
+    if ((url.pathname === '/api/direct' || url.pathname === '/api/direct/stream') && req.method === 'POST') {
       requireType(req, /^application\/json/);
       let body;
       try {
@@ -121,11 +121,43 @@ const server = createServer(async (req, res) => {
       if (!body || typeof body !== 'object' || Array.isArray(body)) {
         throw new HttpError(400, 'JSON body must be an object');
       }
-      const out = await callDirector({
+      const args = {
         transcript: typeof body.transcript === 'string' ? body.transcript : '',
         current: body.current && typeof body.current === 'object' ? body.current : null,
         mode: body.mode === 'predict' ? 'predict' : 'decide',
-      });
+      };
+      if (url.pathname.endsWith('/stream')) {
+        res.writeHead(200, {
+          'content-type': 'application/x-ndjson; charset=utf-8',
+          'cache-control': 'no-store',
+          'x-content-type-options': 'nosniff',
+        });
+        res.flushHeaders();
+        let closed = false;
+        res.on('close', () => { if (!res.writableEnded) closed = true; });
+        try {
+          const out = await callDirector({
+            ...args,
+            onTitle: (ev) => {
+              if (!closed) res.write(JSON.stringify({ type: 'partial', title: ev.title }) + '\n');
+            },
+          });
+          console.log(
+            `[direct] ${(body.purpose || out.source).padEnd(8)} ${String(out.ms).padStart(4)}ms ${out.action.padEnd(9)} ${out.layout.padEnd(8)} ${out.title || ''}`
+          );
+          if (!closed) {
+            res.write(JSON.stringify({ type: 'done', result: out }) + '\n');
+            res.end();
+          }
+        } catch (err) {
+          if (!closed) {
+            res.write(JSON.stringify({ type: 'error', error: String(err.message || err) }) + '\n');
+            res.end();
+          }
+        }
+        return;
+      }
+      const out = await callDirector(args);
       console.log(
         `[direct] ${(body.purpose || out.source).padEnd(8)} ${String(out.ms).padStart(4)}ms ${out.action.padEnd(9)} ${out.layout.padEnd(8)} ${out.title || ''}`
       );

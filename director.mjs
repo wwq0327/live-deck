@@ -23,10 +23,10 @@ const SYSTEM = `你是现场"视觉导演"，不是 PPT 生成器。演讲者正
 
 只输出 JSON，不要解释，不要 markdown。字段：
 {
+  "title": "主标题，<=16 字，像人话，有节奏",
   "action": "new_slide" | "patch" | "noop",
   "layout": "title" | "bullets" | "bigidea" | "stat" | "stats" | "compare" | "steps" | "quote",
   "kicker": "2-6 字的栏目名，可空",
-  "title": "主标题，<=16 字，像人话，有节奏",
   "subtitle": "补充一句，<=28 字，可空",
   "points": ["<=16 字"],
   "left":  {"label": "<=6 字", "value": "<=14 字"},
@@ -82,7 +82,7 @@ function userPrompt({ transcript, current, mode }) {
   return `${cur}\n刚才说过的（背景，不要重复画）：「${before || '（还没有）'}」\n刚说的这一句：「${last}」\n\n这一句该显示什么？`;
 }
 
-export async function callDirector({ transcript, current, mode = 'decide' }) {
+export async function callDirector({ transcript, current, mode = 'decide', onTitle }) {
   const key = loadKey();
   const t0 = Date.now();
   if (!key) return { ...heuristic({ transcript, current }), ms: Date.now() - t0, source: 'heuristic' };
@@ -104,11 +104,16 @@ export async function callDirector({ transcript, current, mode = 'decide' }) {
         thinking: { type: 'disabled' }, // 关键：关掉思考链，否则单次 2s+
         temperature: mode === 'predict' ? 0.9 : 0.65,
         max_tokens: mode === 'predict' ? 220 : 400,
+        stream: typeof onTitle === 'function',
       }),
     });
     if (!r.ok) throw new Error(`api ${r.status}`);
-    const j = await r.json();
-    const raw = j.choices?.[0]?.message?.content ?? '';
+    let raw;
+    if (typeof onTitle === 'function') raw = await readStream(r, onTitle);
+    else {
+      const j = await r.json();
+      raw = j.choices?.[0]?.message?.content ?? '';
+    }
     const slide = normalize(JSON.parse(stripFence(raw)), current);
     return { ...slide, ms: Date.now() - t0, source: 'model', model: MODEL };
   } catch (e) {
@@ -116,6 +121,44 @@ export async function callDirector({ transcript, current, mode = 'decide' }) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function readStream(r, onTitle) {
+  if (!r.body) throw new Error('stream body missing');
+  const reader = r.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '', content = '', sent = '';
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    for (;;) {
+      const nl = buf.indexOf('\n');
+      if (nl < 0) break;
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line.startsWith('data:')) continue;
+      const data = line.slice(5).trim();
+      if (!data || data === '[DONE]') continue;
+      let j;
+      try { j = JSON.parse(data); } catch { continue; }
+      const delta = j.choices?.[0]?.delta?.content;
+      if (!delta) continue;
+      content += delta;
+      // JSON 还没收完，只要 title 的字符串已经闭合就先送出去
+      const m = content.match(/"title"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (m) {
+        let title = '';
+        try { title = JSON.parse(`"${m[1]}"`); } catch {}
+        if (title && title !== sent) {
+          sent = title;
+          onTitle({ title });
+        }
+      }
+    }
+  }
+  if (!content.trim()) throw new Error('empty stream');
+  return content;
 }
 
 function stripFence(s) {

@@ -61,6 +61,20 @@ Content-Type: application/json
 
 `source` 三选一：`model`（模型返回）/ `heuristic`（没 Key）/ `fallback`（调用失败，附带 `error`）。
 
+## 流式接口
+
+`POST /api/direct/stream` 的请求体与 `/api/direct` 相同，返回 `application/x-ndjson`，一行一个事件：
+
+```json
+{"type":"partial","title":"从三小时到一分钟"}
+{"type":"done","result":{ "action":"new_slide", "layout":"compare", ... }}
+```
+
+- 提示词把 `title` 放在 JSON 第一个字段；服务端一旦从上游流里拿到闭合的 `title` 字符串，就先发 `partial`，前端直接改当前占位页的标题，不等整包 JSON。
+- 完整结果仍由 `done` 送达；`result` 的字段与 `/api/direct` 完全一致。
+- 没有 Key、上游报错、超时都仍会走 `heuristic`/`fallback`，只发 `done`，不会让流悬挂。
+- 当前只流式送 `title`；正文（points/stat/left/right）仍要等完整 JSON。
+
 ## action 的语义
 
 | action | 前端怎么消费 |

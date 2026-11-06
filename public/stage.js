@@ -418,7 +418,7 @@ function caption(text, mode = 'final') {
 
 const inflight = new Set();
 
-async function askDirect(mode, transcript, purpose, currentOverride) {
+async function askDirect(mode, transcript, purpose, currentOverride, onPartial) {
   const cur =
     currentOverride !== undefined
       ? currentOverride
@@ -428,8 +428,9 @@ async function askDirect(mode, transcript, purpose, currentOverride) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 12_000);
   inflight.add(ctrl);
+  const stream = typeof onPartial === 'function';
   try {
-    const r = await fetch('/api/direct', {
+    const r = await fetch(stream ? '/api/direct/stream' : '/api/direct', {
       method: 'POST',
       signal: ctrl.signal,
       headers: { 'content-type': 'application/json' },
@@ -441,7 +442,34 @@ async function askDirect(mode, transcript, purpose, currentOverride) {
       }),
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    return await r.json();
+    if (!stream) return await r.json();
+    if (!r.body) throw new Error('stream body missing');
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '', result = null;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      for (;;) {
+        const nl = buf.indexOf('\n');
+        if (nl < 0) break;
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let ev;
+        try { ev = JSON.parse(line); } catch { continue; }
+        if (ev.type === 'partial') {
+          try { onPartial(ev); } catch {}
+        } else if (ev.type === 'done') {
+          result = ev.result;
+        } else if (ev.type === 'error') {
+          throw new Error(ev.error || 'stream error');
+        }
+      }
+    }
+    if (!result) throw new Error('stream ended without result');
+    return result;
   } finally {
     clearTimeout(timer);
     inflight.delete(ctrl);
@@ -493,7 +521,17 @@ async function decide(startedAt, snapshot, expectedEpoch) {
     const seed = lastSentence(state.transcript);
     const live = snapshot !== undefined ? snapshot : state.live;
     const cur = live && live.local ? { ...(live.slide || {}), provisional: true } : undefined;
-    const res = await askDirect('decide', undefined, undefined, cur);
+    let streamed = false;
+    const res = await askDirect('decide', undefined, undefined, cur, (ev) => {
+      if (myEpoch !== epoch || !ev.title) return;
+      const el = [...deck.querySelectorAll('.slide')].pop();
+      if (!el) return;
+      const h = el.querySelector('h1,h2');
+      if (!h) return;
+      const span = h.querySelector('.clip > span') || h;
+      span.textContent = ev.title;
+      streamed = true;
+    });
     if (myEpoch !== epoch) return;
     let instant = false;
     dbg('decide', res.action, res.title, live ? (live.local ? 'local' : 'live') : 'none');
@@ -547,7 +585,7 @@ async function decide(startedAt, snapshot, expectedEpoch) {
       }
       state.ahead = null;
     }
-    if (res.action === 'new_slide' && !same(res, state.current)) {
+    if (res.action === 'new_slide' && (!same(res, state.current) || streamed)) {
       show(res);
     } else if (res.action === 'patch' && state.current?.layout === 'bullets') {
       const pts = mergePoints(state.current, res.add_points);
