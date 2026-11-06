@@ -552,6 +552,9 @@ async function decide(startedAt, snapshot, expectedEpoch) {
     state.spec = null;
   } catch (err) {
     if (myEpoch !== epoch) return;
+    // 请求失败时这一页还没定稿：清掉活页/预判，下一句重新起页，避免在旧页上原地改写。
+    state.live = null;
+    state.ahead = null;
     liveLabel.textContent = '掉线';
     setLat(0, false, 'error', err?.message);
   } finally {

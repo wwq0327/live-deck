@@ -236,7 +236,7 @@ h1, h2 { margin: 0; font-weight: 700; letter-spacing: -0.012em; line-height: 1.0
 
 /* ---------- 版式：chips ---------- */
 .l-chips h1 { font-size: 108px; text-wrap: balance; }
-.l-chips .chips { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 58px; max-width: 1240px; }
+.l-chips .chips { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 58px; max-width: 1400px; }
 .l-chips .chip {
   display: inline-flex; align-items: center; gap: 16px;
   font-size: 46px; font-weight: 600; letter-spacing: -0.015em;

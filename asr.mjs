@@ -166,6 +166,14 @@ export async function transcribe(wavBuffer, { priority = 'final' } = {}) {
   const file = path.join(os.tmpdir(), `deck-${process.pid}-${id}.wav`);
   await writeFile(file, wavBuffer);
 
+  // final 一到，排队中的 partial 已经过期，直接丢掉；否则 worker 会先跑完它们。
+  if (priority !== 'partial') {
+    for (const job of partials.splice(0)) {
+      clearTimeout(job.timer);
+      job.reject(new Error('superseded by final'));
+    }
+  }
+
   const reply = await new Promise((resolve, reject) => {
     const job = { id, wav: file, resolve, reject, timer: null };
     (priority === 'partial' ? partials : finals).push(job);
