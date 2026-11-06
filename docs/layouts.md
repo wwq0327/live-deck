@@ -17,8 +17,8 @@
 | `chips` | 46px 胶囊，一个词一颗 | `points`（2 条以上、每条 ≤8 字） | 一串名词、清单 |
 | `bullets` | 编号列表，行间细线 | `points`（3 条左右、较长） | 较长的一组要点 |
 | `steps` | 三列时间线 + 圆点 + 序号 | `steps` | 有先后顺序的过程 |
-| `stat` | 300px 大数字 + 单位 + 说明 | `stat:{value,unit,label}` | 单个数字 |
-| `stats` | 两个或三个大数字并排 | `stats`（2–3 个） | 多个数字并列 |
+| `stat` | 300px 大数字 + 单位 + 说明 | `stat:{value,unit,label}` | 单个数字；超过 6 位自动缩字号 |
+| `stats` | 两个或三个大数字并排 | `stats`（2–3 个） | 多个数字并列；按 value 长度自动缩字号 |
 | `compare` | 左"以前"右"现在"两栏 | `left:{label,value}` `right:{label,value}` | 对照；标题含"从 X 到 Y" |
 | `quote` | 大引号 + 一句话 + 署名 | `quote:{text,by}` | 引用别人的话 |
 

@@ -39,6 +39,10 @@ test('坏输入不抛异常', () => {
 
 test('heuristic 能覆盖数字、对比、步骤和长句', () => {
   assert.equal(heuristic({ transcript: '日活 10 万' }).layout, 'stat');
+  const stats = heuristic({ transcript: '日活10万，留存40%，延迟1秒' });
+  assert.equal(stats.layout, 'stats');
+  assert.equal(stats.stats.length, 3);
+  assert.deepEqual(stats.stats[1], { value: '40', unit: '%', label: '留存' });
   assert.equal(heuristic({ transcript: '以前很慢，现在很快' }).layout, 'compare');
   assert.equal(heuristic({ transcript: '第一步先听，第二步再想' }).layout, 'steps');
   assert.equal(heuristic({ transcript: '这是一句很短的话' }).layout, 'bigidea');

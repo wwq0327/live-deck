@@ -104,7 +104,7 @@ Content-Type: application/json
   response_format: { type: 'json_object' },
   thinking: { type: 'disabled' },        // 关键：关掉思考链
   temperature: mode === 'predict' ? 0.9 : 0.65,
-  max_tokens: 400,
+  max_tokens: mode === 'predict' ? 220 : 400,
 }
 ```
 
@@ -120,7 +120,7 @@ Content-Type: application/json
 | `thinking: {type:"disabled"}` | **0.6 – 1.0s** | 无 reasoning |
 
 试过但**无效**的两个：`enable_thinking: false`、`chat_template_kwargs`。
-另有一个坑：`max_tokens` 压到 120 会被思考链吃掉，`content` 直接为空——所以关思考 + 留 400 的余量。
+另有一个坑：`max_tokens` 压到 120 会被思考链吃掉，`content` 直接为空——所以关思考，并给 decide 留 400、给更短的 predict 留 220 的余量。
 
 ## 提示词
 

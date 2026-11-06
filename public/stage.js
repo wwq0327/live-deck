@@ -254,9 +254,11 @@ function layoutHTML(s) {
 
     case 'stat': {
       const one = (Array.isArray(s.stats) && s.stats[0]) || s.stat || {};
+      const value = String(one.value ?? '');
+      const fs = value.length > 6 ? Math.max(180, 300 - (value.length - 6) * 30) : 300;
       return `${k(0)}
         <div class="stat-row">
-          <span class="num anim" style="--d:90">${esc(one.value ?? '')}</span>
+          <span class="num anim" style="--d:90;--fs:${fs}px">${esc(value)}</span>
           <span class="unit anim" style="--d:210">${esc(one.unit ?? '')}</span>
         </div>
         <div class="stat-label anim" style="--d:300">${esc(one.label ?? '')}</div>
@@ -267,13 +269,16 @@ function layoutHTML(s) {
       return `${k(0)}${h2(70)}
         <div class="stats">${(s.stats || [])
           .slice(0, 3)
-          .map(
-            (st, i) =>
-              `<div class="statc anim" style="--d:${140 + i * 110}">
-                 <div class="v">${esc(st.value)}<i>${esc(st.unit || '')}</i></div>
+          .map((st, i) => {
+            const value = String(st.value ?? '');
+            const unit = String(st.unit || '');
+            const span = value.length + unit.length * 0.55;
+            const fs = span > 3 ? Math.max(64, 168 - (span - 3) * 18) : 168;
+            return `<div class="statc anim" style="--d:${140 + i * 110}">
+                 <div class="v" style="--fs:${fs}px">${esc(value)}<i>${esc(unit)}</i></div>
                  <div class="lb">${esc(st.label || '')}</div>
-               </div>`
-          )
+               </div>`;
+          })
           .join('')}</div>`;
 
     case 'compare':
@@ -369,7 +374,7 @@ function show(raw, opts = {}) {
 function morph(next, opts = {}) {
   const cur = state.current;
   if (!cur || !next) return;
-  const el = deck.querySelector('.slide');
+  const el = [...deck.querySelectorAll('.slide')].pop();
   if (!el) return;
   const young = state.live ? performance.now() - state.live.t0 < 2400 : false;
   const layout = opts.forceLayout || young ? next.layout || cur.layout : cur.layout;
@@ -463,6 +468,11 @@ async function commit(text, t0, snapshot) {
     state.pending = { t0, snapshot };
     return;
   }
+  // 没有活页、也没有可复用的快照：先本地上一页，别让首屏空等模型。
+  if (!state.live && !snapshot) {
+    provisional(text);
+    if (state.live) snapshot = state.live;
+  }
   await decide(t0, snapshot);
 }
 
@@ -486,7 +496,7 @@ async function decide(startedAt, snapshot, expectedEpoch) {
     if (live && live.slide) {
       if (live.local && res.action === 'new_slide') {
         // 本地先上的临时页：模型说什么就换成什么
-        morph(res, { forceLayout: true });
+        morph({ ...res, noInvert: false, skin: res.skin || undefined }, { forceLayout: true });
         instant = true;
       } else if (res.action === 'new_slide' && (topicNear(res.title, live.slide.title) || topicNear(res.title, seed))) {
         morph(res, { lockPoints: true });
@@ -501,8 +511,14 @@ async function decide(startedAt, snapshot, expectedEpoch) {
         instant = true;
       }
       state.ahead = null;
-      const src = res.source === 'fallback' || res.source === 'heuristic' ? res.source : (instant ? 'ahead' : res.source);
-      setLat(instant ? 0 : Math.round(performance.now() - t0), instant, src, res.error);
+      const fromLocal = Boolean(live.local);
+      const src = res.source === 'fallback' || res.source === 'heuristic'
+        ? res.source
+        : (fromLocal ? (res.source || 'model') : (instant ? 'ahead' : res.source));
+      const showInstant = instant && !fromLocal;
+      setLat(showInstant ? 0 : Math.round(performance.now() - t0), showInstant, src, res.error);
+      // 定稿完成：这一页不再“边说边长”，下一句应该另起一页。
+      if (state.live === live) state.live = null;
       return;
     }
 
@@ -637,7 +653,7 @@ const topicNear = (a, b) => {
 window.morphDebug = () => ({ live: Boolean(state.live), n: state.n, title: state.current?.title });
 
 async function speculate() {
-  if (!state.current || state.busy) return;
+  if (!state.current || state.busy || aheadBusy || state.ahead) return;
   const myEpoch = epoch;
   const seed = lastSentence(state.transcript);
   try {
@@ -674,6 +690,7 @@ const CLOSE_MS = 0.42;
 let mic = null;
 let micToken = 0;
 let pendingPartial = null;
+let partialCtrl = null;
 const asrInflight = new Set();
 const vad = {
   active: false, seg: [], segLen: 0, pre: [], preLen: 0,
@@ -752,6 +769,7 @@ function firePartial() {
   const len = audio.length;
   const myEpoch = epoch;
   const ctrl = new AbortController();
+  partialCtrl = ctrl;
   asrInflight.add(ctrl);
   const job = postAudio(audio, 'partial', ctrl.signal)
     .then((r) => {
@@ -768,14 +786,24 @@ function firePartial() {
     .catch(() => {})
     .finally(() => {
       asrInflight.delete(ctrl);
+      if (partialCtrl === ctrl) partialCtrl = null;
       if (pendingPartial === job) pendingPartial = null;
     });
   pendingPartial = job;
 }
 
+// 收句时 partial 只是“预览”：不能再让 final 排在它后面等。
+function cancelPartial() {
+  if (partialCtrl) {
+    partialCtrl.abort();
+    partialCtrl = null;
+  }
+  pendingPartial = null;
+}
+
 async function finishSegment(audio, t0, snapshot) {
   const myEpoch = epoch;
-  if (pendingPartial) { try { await pendingPartial; } catch {} }
+  cancelPartial();
   if (myEpoch !== epoch) return;
   vad.partialText = '';
   vad.partialLen = 0;
@@ -803,7 +831,10 @@ function closeSegment() {
   const t0 = performance.now();
   const snapshot = state.live;
   state.live = null;
+  state.ahead = null;
+  state.seg += 1; // 让还没回来的 partial/prethink 立即过期
   vad.active = false;
+  cancelPartial();
   const f = concat(vad.seg);
   const keep = Math.max(0, f.length - vad.silence);
   const audio = f.subarray(0, keep);
@@ -1143,6 +1174,7 @@ function reset({ keepDemo = false } = {}) {
   for (const c of asrInflight) c.abort();
   asrInflight.clear();
   pendingPartial = null;
+  partialCtrl = null;
   aheadBusy = false;
   liveEl.classList.remove('thinking');
 

@@ -103,7 +103,7 @@ export async function callDirector({ transcript, current, mode = 'decide' }) {
         response_format: { type: 'json_object' },
         thinking: { type: 'disabled' }, // 关键：关掉思考链，否则单次 2s+
         temperature: mode === 'predict' ? 0.9 : 0.65,
-        max_tokens: 400,
+        max_tokens: mode === 'predict' ? 220 : 400,
       }),
     });
     if (!r.ok) throw new Error(`api ${r.status}`);
@@ -181,6 +181,27 @@ export function heuristic({ transcript }) {
   const pick = [...transcript].length % ACCENTS.length;
   const accent = ACCENTS[pick];
   const num = s.match(/(\d+(?:\.\d+)?)\s*(%|秒|分钟|小时|倍|个|人|天|年|万|亿)?/);
+
+  // 多个并列数字直接给 stats，别让本地兜底只画第一个数字。
+  const chunks = s.split(/[，,；;、]/).map((x) => x.trim()).filter(Boolean);
+  const stats = chunks
+    .map((chunk) => {
+      const m = chunk.match(/(\d+(?:\.\d+)?)\s*(%|秒|分钟|小时|倍|个|人|天|年|万|亿)?/);
+      if (!m) return null;
+      const label = clip(chunk.replace(m[0], '').replace(/^[：:，,。\s]+/, ''), 16);
+      return { value: m[1], unit: m[2] || '', label: label || clip(s, 16) };
+    })
+    .filter(Boolean);
+  if (stats.length >= 2) {
+    return {
+      action: 'new_slide',
+      layout: 'stats',
+      kicker: '数字',
+      title: clip(s, 20),
+      stats: stats.slice(0, 3),
+      accent,
+    };
+  }
 
   if (num && /[0-9]/.test(s)) {
     return {

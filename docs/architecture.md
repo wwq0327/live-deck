@@ -48,12 +48,14 @@
 | 1.07s | 同一段半句丢给导演（`prethink`），结果存 `state.ahead` | server → LLM |
 | 2.1s | 导演返回 → 和占位页是同一句 → `morph()` 原地改写（0.34s 软过渡） | stage.js |
 | 2.4s | 第二个 partial → 更准的半句 → 再 morph 一次 | … |
-| 6.3s | 静音累积到 0.42s → 收句，发 `mode=final` | stage.js |
-| 6.45s | 整段转写回来（0.05–0.14s） | asr_worker |
+| 6.3s | 静音累积到 0.42s → 收句；取消还在跑的 partial（它只是预览），发 `mode=final` | stage.js |
+| 6.45s | 整段转写回来（0.05–0.14s），final 不再排在 partial 后面等 | asr_worker |
 | 6.5s | `decide()`：把"刚说的这一句"发给导演 | server → LLM |
 | 7.8s | 定稿页回来；同一句话 → morph；话题变了才 `show()` 翻页 | stage.js |
 
 **用户感知**：说到第 1 秒画面就开始动，说完的时候画面已经在了。HUD 上的 `0.00s · 预生成` 就是这个意思——收句之后没有再等。
+
+partial 只负责“预览”：收句时前端会直接 abort 还在跑的 partial，final 不再等它；预判结果带 segment 号，收句后自动过期，避免定稿后又被旧半句翻出一页。没有 partial 的短句或打字输入，`commit()` 也会先本地 `provisional()` 上一页，再等模型回来原地改写，首屏不再空等一次导演调用。
 
 ## 状态机
 
