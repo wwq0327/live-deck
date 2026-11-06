@@ -43,7 +43,7 @@ No frontend build, no dependencies — plain `node`. Transcription needs a Pytho
 | Type in the box + `Enter` | same pipeline, no microphone needed |
 | **演示** (or `d`) | runs a 9-line sample script |
 | Drop a `.wav` onto the page | replays a recording through the exact same pipeline |
-| `r` / `f` / `h` | reset / fullscreen / help |
+| `r` / `f` / `h` | reset / fullscreen / hide the UI |
 
 ### Models
 
@@ -108,7 +108,7 @@ mic ──► AudioWorklet (16 kHz mono PCM)
       POST /api/direct ──► deepseek-flash (thinking disabled, ~1 s)
           │                  ├─ this page:  new_slide / patch / noop
           ▼                  └─ next page:  predict (speculative)
-      template renderer (10 compositions × 3 skins, plain DOM)
+      template renderer (13 compositions × 3 skins, plain DOM)
 ```
 
 Four stages, no agent, no tool calls — a straight line from audio to pixels.
@@ -118,7 +118,7 @@ Key design decisions:
 1. **The page appears before the model answers.** The first partial transcript renders a placeholder page locally (zero calls); the model's result later *rewrites* that page in place instead of flipping to a new one.
 2. **One sentence, one page.** A segment counter plus a page snapshot taken at sentence close means late results can never spawn a stray page.
 3. **The camera never shakes.** Layout is locked after 2.4 s, only text changes; the old page fades out over 420 ms while the new one clips in.
-4. **Visual variety is decided locally.** Ten compositions and three background skins, picked by content shape and rotated so no two pages look alike. Adding one costs no model call and no latency.
+4. **Visual variety is decided locally.** Thirteen compositions and three background skins, picked by content shape and rotated so no two pages look alike. Adding one costs no model call and no latency.
 
 ## Docs
 
@@ -126,7 +126,7 @@ Key design decisions:
 | --- | --- |
 | [`docs/architecture.md`](docs/architecture.md) | pipeline, state machines, the three concurrency conflicts and how they're solved |
 | [`docs/director.md`](docs/director.md) | prompt design, JSON contract, the seven prompt-tuning rounds, model swaps |
-| [`docs/layouts.md`](docs/layouts.md) | the ten compositions, how `derive()` picks one, adding a new one |
+| [`docs/layouts.md`](docs/layouts.md) | the thirteen compositions, how `derive()` picks one, adding a new one |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | health JSON, mic diagnosis, slow pages, debug switches |
 | [`docs/roadmap.md`](docs/roadmap.md) | known limitations, next steps, release checklist |
 
@@ -141,7 +141,7 @@ asr.mjs              spawns the Python worker, queues finals ahead of partials
 asr_worker.py        SenseVoice (sherpa-onnx) / whisper, one JSON line per request
 public/index.html    stage + HUD + diagnostics card
 public/stage.js      VAD, mic, state machine, layouts, derivation
-public/stage.css     10 compositions × 3 skins
+public/stage.css     13 compositions × 3 skins
 public/pcm-worklet.js  audio thread
 ```
 

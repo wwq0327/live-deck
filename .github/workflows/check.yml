@@ -14,6 +14,7 @@ jobs:
         with:
           node-version: 22
       - run: npm run check
+      - run: npm test
       # 页面能起来、健康检查能返回（没有密钥时会走本地规则，不影响启动）
       - name: smoke test
         run: |

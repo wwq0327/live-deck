@@ -104,7 +104,7 @@ ASR_BACKEND=whisper ASR_MODEL=small node server.mjs
                           POST /api/direct ──► 小模型（JSON 指令）
                                         │           ├─ 现在这页：new_slide / patch / noop
                                         ▼           └─ 下一句讲什么：predict
-                              模板渲染（10 构图 × 3 底色，纯 DOM）
+                              模板渲染（13 构图 × 3 底色，纯 DOM）
 ```
 
 四条关键设计，缺一条就"不像实时"：
@@ -122,7 +122,7 @@ ASR_BACKEND=whisper ASR_MODEL=small node server.mjs
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | 数据流、时序、状态机、竞态处理、延迟预算 |
 | [docs/director.md](docs/director.md) | 导演协议：JSON schema、提示词全文、调优记录、换模型 |
-| [docs/layouts.md](docs/layouts.md) | 10 种构图 × 3 种底色、选择规则、加一种新版式 |
+| [docs/layouts.md](docs/layouts.md) | 13 种构图 × 3 种底色、选择规则、加一种新版式 |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | 起不来、没声音、延迟异常、日志怎么读 |
 | [docs/roadmap.md](docs/roadmap.md) | 已知限制、下一步、发布前的待办 |
 
@@ -135,7 +135,7 @@ asr.mjs             ASR 常驻进程的管理器（优先级队列、超时、�
 asr_worker.py       转写进程（SenseVoice / whisper 双后端，stdin/stdout JSON 行协议）
 public/             零构建前端
   index.html
-  stage.css         三种底色 + 十种构图
+  stage.css         三种底色 + 十三种构图
   stage.js          音频采集、VAD、状态机、模板渲染
   pcm-worklet.js    AudioWorklet：把 PCM 攒成 2048 帧一包
   sample.wav        拖拽回放用的样例录音

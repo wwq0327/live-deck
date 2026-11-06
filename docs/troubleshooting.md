@@ -45,7 +45,7 @@ curl -s http://127.0.0.1:4400/api/health | python3 -m json.tool
 
 **第一个要排除的：是不是在别的应用的内嵌窗口里打开。** 只有浏览器自己的标签页才有麦克风权限。
 
-页面里点麦克风失败时，会弹一张诊断卡，上面六行就是全部线索：
+页面里点麦克风失败时，会弹一张诊断卡，上面七行就是全部线索：
 
 | 行 | 含义 |
 | --- | --- |
@@ -75,7 +75,7 @@ curl -s http://127.0.0.1:4400/api/health | python3 -m json.tool
 再看 `asr.lastMs`：正常是一句话 50–140ms（SenseVoice）。如果是 600ms+，可能是：
 
 - `ASR_BACKEND=whisper` 但用的是 large 模型 → 换 `ASR_MODEL=small` 或 `tiny`。
-- 第一次请求（模型还在加载）→ 等 1–2 秒，`asr.loading` 会变 `false`。
+- 第一次请求（模型还在加载）→ 等 1–2 秒，`asr.loading` 会变 `false`；如果 `asr.error` 已经给出具体原因，说明 worker 退出了，不会空等 20 秒。
 - CPU 被别的进程吃满 → `ASR_THREADS` 调小反而可能更快（默认 2）。
 
 **导演慢**（>`[direct]` 那一行 2000ms）：检查是不是忘了关思考。请求体里必须有 `thinking: {"type":"disabled"}`；`max_tokens` 压得太低（比如 120）会让思考链吃光配额、`content` 为空。

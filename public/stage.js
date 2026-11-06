@@ -100,9 +100,22 @@ function derive(s, settle) {
     else if (sh) L = 'bullets';
     else L = 'hero';
   }
-  if (L === 'stat') {
-    const list = out.stats || (out.stat ? [out.stat] : []);
-    L = list.length >= 2 ? 'stats' : 'stat';
+  if (L === 'stat' || L === 'stats') {
+    const list = Array.isArray(out.stats) && out.stats.length
+      ? out.stats
+      : (out.stat ? [out.stat] : []);
+    if (list.length >= 2) {
+      L = 'stats';
+      out.stats = list.slice(0, 3);
+    } else if (list.length === 1) {
+      L = 'stat';
+      out.stat = list[0];
+    } else {
+      // 模型说要画数字，却没给 stat/stats：别留一张空页，退回能装下这句话的版式
+      if (sh && sh.n >= 2 && sh.n <= 4) L = 'cards';
+      else if (sh) L = 'bullets';
+      else L = 'hero';
+    }
   }
   if (L === 'title') {
     if (!out.subtitle) L = String(out.title || '').length <= 20 ? 'hero' : 'title';
@@ -131,9 +144,6 @@ function derive(s, settle) {
     else if (out.steps?.length >= 2) L = 'steps';
     else if (out.left && out.right) L = 'compare';
   }
-  out.layout = L;
-  if (L === 'splitflip') out.flip = true;
-
   // 2.4) 有副标题的句子：大字/分栏/色块轮着来，别总是"一行大字 + 一行小字"
   if (out.subtitle && (L === 'hero' || L === 'title') && state.n > 0) {
     L = ['split', 'band', 'hero'][state.n % 3];
@@ -148,6 +158,9 @@ function derive(s, settle) {
       out.right = { label: '现在', value: m[2] };
     }
   }
+
+  out.layout = L;
+  if (L === 'splitflip') out.flip = true;
 
   // 3) 底色：三种，按节奏交替，别一黑到底
   const n = state.n;
@@ -239,14 +252,16 @@ function layoutHTML(s) {
         )
         .join('')}</ul>`;
 
-    case 'stat':
+    case 'stat': {
+      const one = (Array.isArray(s.stats) && s.stats[0]) || s.stat || {};
       return `${k(0)}
         <div class="stat-row">
-          <span class="num anim" style="--d:90">${esc((s.stats && s.stats[0] && s.stats[0].value) ?? s.stat?.value ?? '')}</span>
-          <span class="unit anim" style="--d:210">${esc(s.stat?.unit ?? '')}</span>
+          <span class="num anim" style="--d:90">${esc(one.value ?? '')}</span>
+          <span class="unit anim" style="--d:210">${esc(one.unit ?? '')}</span>
         </div>
-        <div class="stat-label anim" style="--d:300">${esc(s.stat?.label ?? '')}</div>
+        <div class="stat-label anim" style="--d:300">${esc(one.label ?? '')}</div>
         ${s.title ? `<div class="stat-ctx anim" style="--d:380">${esc(s.title)}</div>` : ''}`;
+    }
 
     case 'stats':
       return `${k(0)}${h2(70)}
@@ -298,7 +313,8 @@ function layoutHTML(s) {
   }
 }
 
-const state = { transcript: '', current: null, history: [], n: 0, busy: false, pending: false, spec: null, ahead: null, live: null, seg: 0 };
+const state = { transcript: '', current: null, history: [], n: 0, busy: false, pending: false, spec: null, ahead: null, live: null, seg: 0, listening: false };
+let epoch = 0;
 
 const DEBUG = params.get('debug') === '1';
 if (DEBUG) window.__d = { get recent() { return RECENT.slice(); }, get state() { return state; } };
@@ -353,14 +369,14 @@ function show(raw, opts = {}) {
 function morph(next, opts = {}) {
   const cur = state.current;
   if (!cur || !next) return;
+  const el = deck.querySelector('.slide');
+  if (!el) return;
   const young = state.live ? performance.now() - state.live.t0 < 2400 : false;
   const layout = opts.forceLayout || young ? next.layout || cur.layout : cur.layout;
   const slide = derive({ ...cur, ...next, layout }, true);
   slide.points = opts.lockPoints && (cur.points || []).length > (next.points || []).length ? cur.points : slide.points;
-  const el = deck.querySelector('.slide');
   state.current = slide;
   if (state.live) state.live.slide = slide;
-  if (!el) return;
   el.className = slideClass(slide) + ' soft';
   document.body.dataset.skin = slide.skin || 'dark';
   dbg('morph', state.n - 1, slide.layout, slide.title);
@@ -389,6 +405,8 @@ function caption(text, mode = 'final') {
 
 /* ---------- 导演 ---------- */
 
+const inflight = new Set();
+
 async function askDirect(mode, transcript, purpose, currentOverride) {
   const cur =
     currentOverride !== undefined
@@ -396,18 +414,27 @@ async function askDirect(mode, transcript, purpose, currentOverride) {
       : state.current && !state.current.standby
         ? state.current
         : null;
-  const r = await fetch('/api/direct', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      transcript: transcript || state.transcript,
-      current: cur,
-      mode,
-      purpose,
-    }),
-  });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 12_000);
+  inflight.add(ctrl);
+  try {
+    const r = await fetch('/api/direct', {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        transcript: transcript || state.transcript,
+        current: cur,
+        mode,
+        purpose,
+      }),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+    inflight.delete(ctrl);
+  }
 }
 
 const bigrams = (s) => {
@@ -439,7 +466,9 @@ async function commit(text, t0, snapshot) {
   await decide(t0, snapshot);
 }
 
-async function decide(startedAt, snapshot) {
+async function decide(startedAt, snapshot, expectedEpoch) {
+  if (expectedEpoch !== undefined && expectedEpoch !== epoch) return;
+  const myEpoch = epoch;
   state.busy = true;
   liveEl.classList.add('thinking');
   liveLabel.textContent = '思考';
@@ -449,6 +478,7 @@ async function decide(startedAt, snapshot) {
     const live = snapshot !== undefined ? snapshot : state.live;
     const cur = live && live.local ? { ...(live.slide || {}), provisional: true } : undefined;
     const res = await askDirect('decide', undefined, undefined, cur);
+    if (myEpoch !== epoch) return;
     let instant = false;
     dbg('decide', res.action, res.title, live ? (live.local ? 'local' : 'live') : 'none');
 
@@ -471,7 +501,8 @@ async function decide(startedAt, snapshot) {
         instant = true;
       }
       state.ahead = null;
-      setLat(instant ? 0 : Math.round(performance.now() - t0), instant, instant ? 'ahead' : res.source);
+      const src = res.source === 'fallback' || res.source === 'heuristic' ? res.source : (instant ? 'ahead' : res.source);
+      setLat(instant ? 0 : Math.round(performance.now() - t0), instant, src, res.error);
       return;
     }
 
@@ -500,20 +531,24 @@ async function decide(startedAt, snapshot) {
       const pts = mergePoints(state.current, res.add_points);
       if (pts) show({ ...state.current, points: pts });
     }
-    setLat(instant ? 0 : Math.round(performance.now() - t0), instant, instant ? 'ahead' : res.source);
+    const src = res.source === 'fallback' || res.source === 'heuristic' ? res.source : (instant ? 'ahead' : res.source);
+    setLat(instant ? 0 : Math.round(performance.now() - t0), instant, src, res.error);
     state.spec = null;
   } catch (err) {
+    if (myEpoch !== epoch) return;
     liveLabel.textContent = '掉线';
-    setLat(0, false, 'error');
+    setLat(0, false, 'error', err?.message);
   } finally {
-    state.busy = false;
-    liveEl.classList.remove('thinking');
-    liveLabel.textContent = state.listening ? '听' : '待机';
-    speculate();
-    if (state.pending) {
-      const p = state.pending;
-      state.pending = false;
-      await decide(p.t0, p.snapshot);
+    if (myEpoch === epoch) {
+      state.busy = false;
+      liveEl.classList.remove('thinking');
+      liveLabel.textContent = demoRunning ? '演示' : state.listening ? '听' : '待机';
+      speculate();
+      if (state.pending) {
+        const p = state.pending;
+        state.pending = false;
+        await decide(p.t0, p.snapshot, myEpoch);
+      }
     }
   }
 }
@@ -571,6 +606,7 @@ function applyAhead(text, r) {
 async function prethink(partialText) {
   const t = String(partialText || '').trim();
   if (t.length < 8 || aheadBusy) return;
+  const myEpoch = epoch;
   const seg = state.seg;
   aheadBusy = true;
   try {
@@ -580,14 +616,16 @@ async function prethink(partialText) {
       'ahead',
       state.current && !state.current.standby ? { ...state.current, provisional: true } : null
     );
-    if (seg !== state.seg) { dbg('ahead dropped', t.slice(0, 8)); return; }
+    if (myEpoch !== epoch || seg !== state.seg) { dbg('ahead dropped', t.slice(0, 8)); return; }
     if (r.action === 'new_slide' && r.title) {
       state.ahead = { text: t, slide: r };
       applyAhead(t, r);
       window.__aheadSet = (window.__aheadSet || 0) + 1;
     }
   } catch {}
-  aheadBusy = false;
+  finally {
+    if (myEpoch === epoch) aheadBusy = false;
+  }
 }
 
 const topicNear = (a, b) => {
@@ -600,17 +638,29 @@ window.morphDebug = () => ({ live: Boolean(state.live), n: state.n, title: state
 
 async function speculate() {
   if (!state.current || state.busy) return;
+  const myEpoch = epoch;
   const seed = lastSentence(state.transcript);
   try {
     const r = await askDirect('predict');
+    if (myEpoch !== epoch) return;
     if (r.action === 'new_slide' && r.title) state.spec = { seed, slide: r };
   } catch {}
 }
 
-function setLat(ms, instant, source) {
+function setLat(ms, instant, source, error) {
+  latEl.title = '';
+  latEl.classList.remove('warn');
   if (source === 'error') {
     latEl.textContent = '导演掉线';
     latEl.classList.remove('hit');
+    latEl.title = error || '导演接口不可用';
+    return;
+  }
+  if (source === 'fallback' || source === 'heuristic') {
+    latEl.textContent = source === 'fallback' ? '规则兜底' : '本地规则';
+    latEl.classList.remove('hit');
+    latEl.classList.toggle('warn', source === 'fallback');
+    latEl.title = error || (source === 'fallback' ? '导演模型不可用，已用本地规则' : '没有找到 Key，使用本地规则');
     return;
   }
   latEl.textContent = instant ? '0.00s · 预生成' : `${(ms / 1000).toFixed(2)}s`;
@@ -620,8 +670,11 @@ function setLat(ms, instant, source) {
 /* ---------- 麦克风：本地 whisper ---------- */
 
 const SR = 16000;
+const CLOSE_MS = 0.42;
 let mic = null;
+let micToken = 0;
 let pendingPartial = null;
+const asrInflight = new Set();
 const vad = {
   active: false, seg: [], segLen: 0, pre: [], preLen: 0,
   silence: 0, voiced: 0, noise: 0.004,
@@ -637,6 +690,14 @@ const concat = (list) => {
   for (const c of list) { out.set(c, o); o += c.length; }
   return out;
 };
+
+function clearVad() {
+  vad.active = false;
+  vad.seg = []; vad.segLen = 0;
+  vad.pre = []; vad.preLen = 0;
+  vad.silence = 0; vad.voiced = 0; vad.noise = 0.004;
+  vad.partialText = ''; vad.partialLen = 0; vad.partialAt = 0;
+}
 
 function float32ToWav(f32, sr) {
   const n = f32.length;
@@ -667,13 +728,21 @@ function resample(input, from, to) {
   return out;
 }
 
-async function postAudio(f32, mode) {
+async function postAudio(f32, mode, signal) {
   const res = await fetch('/api/asr?mode=' + mode, {
     method: 'POST',
+    signal,
     headers: { 'content-type': 'audio/wav' },
     body: float32ToWav(f32, SR),
   });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try {
+      const j = await res.json();
+      if (j && j.error) msg = j.error;
+    } catch {}
+    throw new Error(msg);
+  }
   return res.json();
 }
 
@@ -681,9 +750,13 @@ function firePartial() {
   const audio = concat(vad.seg);
   if (audio.length < SR * 1.0) return; // 太短的片段转出来多半是错字
   const len = audio.length;
-  pendingPartial = postAudio(audio, 'partial')
+  const myEpoch = epoch;
+  const ctrl = new AbortController();
+  asrInflight.add(ctrl);
+  const job = postAudio(audio, 'partial', ctrl.signal)
     .then((r) => {
-      if (vad.active && r.text && r.text.trim().length >= 6) {
+      if (myEpoch !== epoch || !vad.active) return;
+      if (r.text && r.text.trim().length >= 6) {
         vad.partialText = r.text;
         vad.partialLen = len;
         vad.partialAt = performance.now();
@@ -693,24 +766,35 @@ function firePartial() {
       }
     })
     .catch(() => {})
-    .finally(() => { pendingPartial = null; });
+    .finally(() => {
+      asrInflight.delete(ctrl);
+      if (pendingPartial === job) pendingPartial = null;
+    });
+  pendingPartial = job;
 }
 
 async function finishSegment(audio, t0, snapshot) {
+  const myEpoch = epoch;
   if (pendingPartial) { try { await pendingPartial; } catch {} }
+  if (myEpoch !== epoch) return;
   vad.partialText = '';
   vad.partialLen = 0;
   vad.partialAt = 0;
 
   setLive('转写');
+  const ctrl = new AbortController();
+  asrInflight.add(ctrl);
   try {
-    const r = await postAudio(audio, 'final');
+    const r = await postAudio(audio, 'final', ctrl.signal);
+    if (myEpoch !== epoch) return;
     if (r.text) commit(r.text, t0, snapshot);
     else caption('（这句没听清，再说一次）', 'hold');
   } catch (err) {
+    if (myEpoch !== epoch) return;
     caption('本地转写失败：' + err.message, 'hold');
   } finally {
-    if (!state.busy) setLive(state.listening ? '听' : '待机');
+    asrInflight.delete(ctrl);
+    if (myEpoch === epoch && !state.busy) setLive(state.listening ? '听' : '待机');
   }
 }
 
@@ -728,13 +812,18 @@ function closeSegment() {
   finishSegment(audio, t0, snapshot);
 }
 
+let playToken = 0;
+
 async function feedFile(file) {
+  const token = ++playToken;
   if (mic) stopMic();
   caption('正在解码这段录音…', 'hold');
   try {
     const buf = await file.arrayBuffer();
+    if (token !== playToken) return;
     const ac = new AudioContext();
     const dec = await ac.decodeAudioData(buf);
+    if (token !== playToken) { ac.close(); return; }
     const ch = Math.min(2, dec.numberOfChannels);
     const len = dec.length;
     const mono = new Float32Array(len);
@@ -751,21 +840,23 @@ async function feedFile(file) {
     src.start();
     const out = (await off.startRendering()).getChannelData(0);
     try { ac.close(); } catch {}
-    if ($('#diag').classList.contains('on')) $('#diag').classList.remove('on');
+    if (token !== playToken) return;
+    if ($('#diag').classList.contains('on')) closeDiag();
     state.listening = true;
     setLive('听');
     caption('拿录音跑一遍：' + file.name + '（1.5 倍速，切句和出页跟麦克风一模一样）', 'hold');
-    await playBuffer(out);
+    await playBuffer(out, token);
   } catch (e) {
-    caption('这个文件解不开：' + e.message, 'hold');
+    if (token === playToken) caption('这个文件解不开：' + e.message, 'hold');
   }
 }
 
-function playBuffer(data) {
+function playBuffer(data, token = playToken) {
   return new Promise((resolve) => {
     const step = 2048;
     let i = 0;
     const tick = () => {
+      if (token !== playToken) { resolve(); return; }
       if (i >= data.length) {
         if (vad.active) closeSegment();
         state.listening = false;
@@ -830,7 +921,7 @@ function processChunk(chunk) {
       vad.silence += n;
       vad.seg.push(chunk);
       vad.segLen += n;
-      if (vad.silence >= SR * 0.42 || vad.segLen > SR * 20) closeSegment();
+      if (vad.silence >= SR * CLOSE_MS || vad.segLen > SR * 20) closeSegment();
     }
   }
 
@@ -844,17 +935,28 @@ async function startMic() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     return failMic(null);
   }
+  const token = ++micToken;
+  let stream = null;
+  let ctx = null;
+  const discard = () => {
+    try { stream?.getTracks().forEach((t) => t.stop()); } catch {}
+    try { ctx?.close(); } catch {}
+  };
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    stream = await navigator.mediaDevices.getUserMedia({
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
-    const ctx = new AudioContext({ sampleRate: SR });
+    if (token !== micToken) { discard(); return; }
+    ctx = new AudioContext({ sampleRate: SR });
     await ctx.resume();
+    if (token !== micToken) { discard(); return; }
     await ctx.audioWorklet.addModule('/pcm-worklet.js');
+    if (token !== micToken) { discard(); return; }
     const src = ctx.createMediaStreamSource(stream);
     const node = new AudioWorkletNode(ctx, 'pcm-tap', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
     const rate = ctx.sampleRate;
     node.port.onmessage = (e) => {
+      if (token !== micToken) return;
       const chunk = rate === SR ? e.data : resample(e.data, rate, SR);
       processChunk(chunk);
     };
@@ -867,10 +969,12 @@ async function startMic() {
     mic = { stream, ctx, node, src };
     state.listening = true;
     micBtn.classList.add('on');
-    document.getElementById('diag')?.classList.remove('on');
+    closeDiag();
     setLive('听');
     caption('本地模型在听。说完一句停一下，画面就来。', 'final');
   } catch (err) {
+    if (token !== micToken) { discard(); return; }
+    discard();
     failMic(err);
   }
 }
@@ -885,7 +989,7 @@ const DIAG_HINT = {
 
 async function failMic(err) {
   const rows = [];
-  const push = (k, v) => rows.push(['<b>' + k + '</b>', String(v)]);
+  const push = (k, v) => rows.push([k, String(v)]);
   push('错误', err ? err.name + (err.message ? ' · ' + err.message : '') : 'navigator.mediaDevices 不存在');
   push('含义', err ? (DIAG_HINT[err.name] || '未知') : '不是安全上下文，浏览器彻底关掉了麦克风 API');
   push('地址', location.href);
@@ -902,30 +1006,60 @@ async function failMic(err) {
   renderDiag(rows);
 }
 
+let diagReturnFocus = null;
+
 function renderDiag(rows) {
   const box = document.getElementById('diag');
   if (!box) return;
-  box.querySelector('#diag-rows').innerHTML = rows.map(([k, v]) => k + '<span>' + v + '</span>').join('');
+  diagReturnFocus = document.activeElement;
+  box.querySelector('#diag-rows').innerHTML = rows
+    .map(([k, v]) => '<div><b>' + esc(k) + '</b><span>' + esc(v) + '</span></div>')
+    .join('');
   box.classList.add('on');
+  box.setAttribute('aria-hidden', 'false');
+  const x = document.getElementById('diag-x');
+  if (x) x.focus();
   caption('麦克风打不开，下面写了原因和三步修法。', 'hold');
 }
 
+function closeDiag() {
+  const box = document.getElementById('diag');
+  if (!box || !box.classList.contains('on')) return;
+  box.classList.remove('on');
+  box.setAttribute('aria-hidden', 'true');
+  if (diagReturnFocus && document.contains(diagReturnFocus)) {
+    try { diagReturnFocus.focus(); } catch {}
+  }
+  diagReturnFocus = null;
+}
+
 function stopMic() {
-  if (!mic) return;
+  micToken += 1;
   const m = mic;
   mic = null;
-  try { m.stream.getTracks().forEach((t) => t.stop()); } catch {}
-  try { m.node.disconnect(); m.ctx.close(); } catch {}
-  vad.active = false;
-  vad.seg = []; vad.segLen = 0; vad.silence = 0; vad.voiced = 0;
+  clearVad();
   state.listening = false;
   micBtn.classList.remove('on');
   setLive('待机');
+  if (!m) return;
+  try { m.stream.getTracks().forEach((t) => t.stop()); } catch {}
+  try { m.node.disconnect(); m.ctx.close(); } catch {}
 }
 
 micBtn.addEventListener('click', () => (mic ? stopMic() : startMic()));
-$('#diag-x').addEventListener('click', () => $('#diag').classList.remove('on'));
-$('#diag-retry').addEventListener('click', () => { $('#diag').classList.remove('on'); startMic(); });
+$('#diag-x').addEventListener('click', closeDiag);
+$('#diag-retry').addEventListener('click', () => { closeDiag(); startMic(); });
+$('#diag').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeDiag(); return; }
+  if (e.key !== 'Tab') return;
+  const items = [...e.currentTarget.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+    .filter((el) => !el.disabled);
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 
 /* ---------- 打字 ---------- */
 
@@ -955,27 +1089,41 @@ const DEMO = [
 ];
 
 let demoRunning = false;
+let demoToken = 0;
 
-async function typeOut(line) {
+function stopDemo() {
+  demoToken += 1;
+  demoRunning = false;
+  demoBtn.classList.remove('on');
+  if (!state.busy) liveLabel.textContent = state.listening ? '听' : '待机';
+}
+
+async function typeOut(line, token) {
   const chars = [...line];
   const per = Math.max(26, Math.min(64, 2600 / chars.length));
   for (let i = 1; i <= chars.length; i++) {
+    if (token !== demoToken) return false;
     caption(chars.slice(0, i).join(''), 'interim');
     await sleep(per);
   }
+  return token === demoToken;
 }
 
 async function runDemo() {
-  if (demoRunning) return;
+  if (demoRunning) { stopDemo(); return; }
+  const token = ++demoToken;
   demoRunning = true;
-  reset();
+  reset({ keepDemo: true });
   demoBtn.classList.add('on');
   liveLabel.textContent = '演示';
   for (const line of DEMO) {
-    await typeOut(line);
+    if (token !== demoToken) return;
+    if (!await typeOut(line, token)) return;
     await commit(line);
+    if (token !== demoToken) return;
     await sleep(500);
   }
+  if (token !== demoToken) return;
   demoBtn.classList.remove('on');
   liveLabel.textContent = '待机';
   demoRunning = false;
@@ -985,12 +1133,35 @@ demoBtn.addEventListener('click', runDemo);
 
 /* ---------- 其它 ---------- */
 
-function reset() {
+function reset({ keepDemo = false } = {}) {
+  if (!keepDemo) stopDemo();
+  stopMic();
+  epoch += 1;
+  playToken += 1;
+  for (const c of inflight) c.abort();
+  inflight.clear();
+  for (const c of asrInflight) c.abort();
+  asrInflight.clear();
+  pendingPartial = null;
+  aheadBusy = false;
+  liveEl.classList.remove('thinking');
+
   state.transcript = '';
   state.current = null;
   state.history = [];
   state.spec = null;
+  state.ahead = null;
+  state.busy = false;
+  state.pending = null;
+  state.live = null;
   state.n = 0;
+  state.seg = 0;
+  state.listening = false;
+  RECENT.length = 0;
+  clearVad();
+  micBtn.classList.remove('on');
+  setLive('待机');
+
   idxEl.textContent = '00';
   deck.innerHTML = '';
   latEl.textContent = '—';
@@ -1105,7 +1276,7 @@ const SAMPLE = {
     stats: [
       { value: '1.5', unit: '秒', label: '开口到第一页' },
       { value: '0.1', unit: '秒', label: '一句转写' },
-      { value: '9', unit: '套', label: '版式模板' },
+      { value: '13', unit: '套', label: '版式模板' },
     ],
     accent: '#FFB454',
   },

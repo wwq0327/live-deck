@@ -18,53 +18,75 @@ const MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.wav': 'audio/wav',
   '.woff2': 'font/woff2',
 };
 
+const LOCAL_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`, `[::1]:${PORT}`]);
+const LOCAL_ORIGINS = new Set([`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`, `http://[::1]:${PORT}`]);
+
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function assertLocalRequest(req) {
+  const host = String(req.headers.host || '').toLowerCase();
+  if (host && !LOCAL_HOSTS.has(host)) throw new HttpError(403, 'host not allowed');
+  if (req.method === 'GET' || req.method === 'HEAD') return;
+  const origin = String(req.headers.origin || '').toLowerCase();
+  if (origin && !LOCAL_ORIGINS.has(origin)) throw new HttpError(403, 'origin not allowed');
+  if (String(req.headers['sec-fetch-site'] || '') === 'cross-site') {
+    throw new HttpError(403, 'cross-site request blocked');
+  }
+}
+
+function requireType(req, re) {
+  const type = String(req.headers['content-type'] || '').toLowerCase();
+  if (!re.test(type)) throw new HttpError(415, 'unsupported content-type');
+}
+
 function send(res, code, body, type = 'application/json; charset=utf-8') {
-  res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' });
-  res.end(body);
+  res.writeHead(code, {
+    'content-type': type,
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(res.req && res.req.method === 'HEAD' ? undefined : body);
 }
 
 function readBinary(req, limit = 24 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let size = 0;
+    let done = false;
     const chunks = [];
     req.on('data', (c) => {
+      if (done) return;
       size += c.length;
       if (size > limit) {
-        reject(new Error('body too large'));
-        req.destroy();
+        done = true;
+        reject(new HttpError(413, 'body too large'));
+        req.resume();
         return;
       }
       chunks.push(c);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
+    req.on('end', () => { if (!done) { done = true; resolve(Buffer.concat(chunks)); } });
+    req.on('error', (err) => { if (!done) { done = true; reject(err); } });
   });
 }
 
 function readBody(req, limit = 256 * 1024) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    const chunks = [];
-    req.on('data', (c) => {
-      size += c.length;
-      if (size > limit) {
-        reject(new Error('body too large'));
-        req.destroy();
-        return;
-      }
-      chunks.push(c);
-    });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
+  return readBinary(req, limit).then((buf) => buf.toString('utf8'));
 }
 
 const server = createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
+    assertLocalRequest(req);
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
     if (url.pathname === '/api/health') {
       return send(
         res,
@@ -79,6 +101,7 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/asr' && req.method === 'POST') {
+      requireType(req, /^audio\/|^application\/octet-stream/);
       const wav = await readBinary(req);
       const mode = url.searchParams.get('mode') === 'partial' ? 'partial' : 'final';
       const out = await transcribe(wav, { priority: mode });
@@ -87,10 +110,20 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/direct' && req.method === 'POST') {
-      const body = JSON.parse((await readBody(req)) || '{}');
+      requireType(req, /^application\/json/);
+      let body;
+      try {
+        body = JSON.parse((await readBody(req)) || '{}');
+      } catch (err) {
+        if (err instanceof HttpError) throw err;
+        throw new HttpError(400, 'invalid JSON');
+      }
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        throw new HttpError(400, 'JSON body must be an object');
+      }
       const out = await callDirector({
-        transcript: body.transcript || '',
-        current: body.current || null,
+        transcript: typeof body.transcript === 'string' ? body.transcript : '',
+        current: body.current && typeof body.current === 'object' ? body.current : null,
         mode: body.mode === 'predict' ? 'predict' : 'decide',
       });
       console.log(
@@ -99,15 +132,22 @@ const server = createServer(async (req, res) => {
       return send(res, 200, JSON.stringify(out));
     }
 
+    if (req.method === 'OPTIONS') return send(res, 405, '{"error":"method"}');
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"method"}');
 
-    const rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    let rel;
+    try {
+      rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    } catch {
+      throw new HttpError(400, 'bad path');
+    }
     const file = path.join(PUBLIC, rel);
     if (!file.startsWith(PUBLIC + path.sep)) return send(res, 403, '{"error":"forbidden"}');
     const data = await readFile(file);
-    send(res, 200, data, MIME[path.extname(file)] || 'application/octet-stream');
+    send(res, 200, data, MIME[path.extname(file).toLowerCase()] || 'application/octet-stream');
   } catch (err) {
-    const code = err.code === 'ENOENT' ? 404 : 500;
+    const code = err.status || (err.code === 'ENOENT' ? 404 : 500);
+    if (code >= 500) console.error(`[http] ${req.method} ${req.url}:`, err.message);
     send(res, code, JSON.stringify({ error: String(err.message || err) }));
   }
 });

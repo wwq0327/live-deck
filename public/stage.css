@@ -215,7 +215,7 @@ h1, h2 { margin: 0; font-weight: 700; letter-spacing: -0.012em; line-height: 1.0
 .skin-wash .ghost { --go: 0.07; color: #0b0b0e; }
 
 /* ---------- 版式：hero ---------- */
-.l-hero h1 { font-size: 136px; }
+.l-hero h1 { font-size: 136px; text-wrap: balance; overflow-wrap: break-word; }
 .l-hero .sub { font-size: 30px; margin-top: 40px; max-width: 1040px; }
 
 /* ---------- 版式：band（色块贴纸） ---------- */
@@ -329,6 +329,7 @@ h1, h2 { margin: 0; font-weight: 700; letter-spacing: -0.012em; line-height: 1.0
   font-variant-numeric: tabular-nums;
 }
 #lat.hit { color: #0a0a0c; background: var(--accent); border-color: var(--accent); }
+#lat.warn { color: #ffb454; border-color: rgba(255, 180, 84, 0.4); }
 
 #idx {
   position: fixed; right: 42px; bottom: 40px;
@@ -366,6 +367,8 @@ h1, h2 { margin: 0; font-weight: 700; letter-spacing: -0.012em; line-height: 1.0
 #diag .x {
   position: absolute; top: 10px; right: 14px; cursor: pointer;
   color: rgba(245, 242, 233, 0.35); font-size: 13px;
+  background: transparent; border: 0; padding: 4px; line-height: 1;
+  font-family: inherit;
 }
 #diag .x:hover { color: var(--ink); }
 #diag .acts { margin-top: 14px; }
@@ -427,7 +430,32 @@ body[data-skin="cream"] #bar { background: rgba(255, 255, 255, 0.82); border-col
 body[data-skin="cream"] #bar input { color: #17160f; }
 body[data-skin="cream"] #bar button { color: rgba(23, 22, 15, 0.8); border-color: rgba(23, 22, 15, 0.16); }
 body[data-skin="cream"] #idx { color: rgba(23, 22, 15, 0.5); }
+body[data-skin="cream"] #live { color: rgba(23, 22, 15, 0.62); }
+body[data-skin="cream"] #lat { color: rgba(23, 22, 15, 0.62); border-color: rgba(23, 22, 15, 0.22); }
+body[data-skin="cream"] #lat.warn { color: #9a4b12; border-color: rgba(154, 75, 18, 0.35); }
 body[data-skin="wash"] #caption { color: rgba(11, 11, 14, 0.72); }
 body[data-skin="wash"] #bar { background: rgba(255, 255, 255, 0.6); border-color: rgba(11, 11, 14, 0.14); }
 body[data-skin="wash"] #bar button, body[data-skin="wash"] #bar input { color: #0b0b0e; border-color: rgba(11, 11, 14, 0.16); }
 body[data-skin="wash"] #idx { color: rgba(11, 11, 14, 0.5); }
+body[data-skin="wash"] #live { color: rgba(11, 11, 14, 0.62); }
+body[data-skin="wash"] #lat { color: rgba(11, 11, 14, 0.62); border-color: rgba(11, 11, 14, 0.22); }
+body[data-skin="wash"] #lat.warn { color: #9a4b12; border-color: rgba(154, 75, 18, 0.35); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+:where(button, input, a):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -72,13 +72,13 @@ Content-Type: application/json
 服务端会做两次降级，避免前端收到空指令：
 
 - `patch` 但 `add_points` 为空 → 改成 `noop`
-- `new_slide` 但既没有 `title`、也没有 `stat.value`/`quote.text` → 改成 `noop`
+- `new_slide` 但既没有 `title`，也没有 `stat.value`/`stats`/`quote.text`/`points`/`steps`/`left`/`right` → 改成 `noop`
 
 ## layout 的取值
 
-模型只能给这七种（老的语义层）：`title` / `bullets` / `bigidea` / `stat` / `compare` / `steps` / `quote`。
+模型可以给这八种（老的语义层）：`title` / `bullets` / `bigidea` / `stat` / `stats` / `compare` / `steps` / `quote`。
 
-**注意**：模型给的 `layout` 只是"内容形状"的建议，前端 `derive()` 会再映射一次到十种构图（`hero`/`band`/`split`/`cards`/`chips`/`stats`…），并做防重复轮换。见 [layouts.md](layouts.md)。
+**注意**：模型给的 `layout` 只是"内容形状"的建议，前端 `derive()` 会再映射一次到十三种构图（`hero`/`band`/`split`/`cards`/`chips`/`stats`…），并做防重复轮换。见 [layouts.md](layouts.md)。
 
 ## 字段上限（`normalize()` 里硬裁）
 
@@ -91,6 +91,7 @@ Content-Type: application/json
 | `steps` | 每条 18 字，最多 3 条 |
 | `left/right.value` | 16 字 |
 | `stat.value` | 8 字，`unit` 4 字 |
+| `stats` | 最多 3 项；每项 `value` 8 字、`unit` 4 字、`label` 20 字 |
 | `quote.text` | 48 字 |
 
 超了不会报错，直接截断——**宁可少写，也不要让排版崩掉**。
@@ -149,7 +150,7 @@ Content-Type: application/json
 ```bash
 DIRECTOR_MODEL=deepseek-v4-pro node server.mjs          # 同一家，更贵更慢
 DEEPSEEK_BASE_URL=https://api.openai.com/v1 \
-DIRECTOR_MODEL=gpt-4o-mini node server.mjs              # 换一家（要改 loadKey 的读法）
+DIRECTOR_MODEL=gpt-4o-mini node server.mjs              # 换一家（环境变量里的 Key 会优先被读取）
 ```
 
 换模型后要重新验三件事：JSON 是否稳定（`response_format` 支持吗）、延迟、以及关思考的参数名（DeepSeek 是 `thinking`，别家可能没有）。

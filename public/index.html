@@ -21,11 +21,11 @@
 
   <div id="idx">00</div>
 
-  <div id="caption"><span id="cap"></span></div>
+  <div id="caption" role="status" aria-live="polite" aria-atomic="true"><span id="cap"></span></div>
 
-  <div id="diag">
-    <span class="x" id="diag-x">✕</span>
-    <h4>麦克风打不开</h4>
+  <div id="diag" role="dialog" aria-modal="true" aria-labelledby="diag-title" aria-hidden="true">
+    <button type="button" class="x" id="diag-x" aria-label="关闭诊断">✕</button>
+    <h4 id="diag-title">麦克风打不开</h4>
     <div class="rows" id="diag-rows"></div>
     <ol>
       <li>点地址栏左边的小锁（或滑块）图标 → 麦克风 → 允许 → 刷新页面</li>
@@ -33,15 +33,16 @@
       <li>如果这个页面是从别的应用里点开的，换成 Chrome 新标签页直接打开 <b>http://127.0.0.1:4400</b></li>
       <li>急着看效果就把一段录音（wav / mp3 / m4a）<b>拖进这个页面</b>，我用同一条管线跑一遍</li>
     </ol>
-    <div class="acts"><button id="diag-retry">改好了，再试一次</button></div>
+    <div class="acts"><button type="button" id="diag-retry">改好了，再试一次</button></div>
   </div>
 
-  <div id="bar">
-    <button id="mic" title="麦克风（M）">麦克风</button>
+  <div id="bar" role="toolbar" aria-label="演示控制">
+    <button type="button" id="mic" title="麦克风（M）" aria-label="开关麦克风">麦克风</button>
+    <label class="sr-only" for="input">输入一句话</label>
     <input id="input" placeholder="也可以直接打字，回车出页" autocomplete="off">
-    <button id="go">出页</button>
-    <button id="demo" title="演示（D）">演示</button>
-    <button id="reset" title="清空（R）">清空</button>
+    <button type="button" id="go">出页</button>
+    <button type="button" id="demo" title="演示（D）">演示</button>
+    <button type="button" id="reset" title="清空（R）">清空</button>
   </div>
 
   <script type="module" src="/stage.js"></script>

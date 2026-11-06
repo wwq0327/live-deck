@@ -18,7 +18,7 @@
 │  index.html                                                      │
 │  stage.js     AudioWorklet 采集 → VAD 切句 → 字幕 → 状态机        │
 │               derive() / layoutHTML() / show() / morph()          │
-│  stage.css    10 构图 × 3 底色                                    │
+│  stage.css    13 构图 × 3 底色                                    │
 └───────────────┬──────────────────────────────────────────────────┘
                 │ POST /api/asr?mode=partial|final    (WAV, 16k mono)
                 │ POST /api/direct                    (JSON)
@@ -124,7 +124,7 @@ show(raw) ── derive() ──► 新 section 入场（clip 0.95s）
 ## 降级路径
 
 - **没有 Key** → `director.mjs` 的 `heuristic()` 用关键词出页（数字→stat、对比词→compare、序数词→steps），不报错。
-- **ASR 没就绪** → `transcribe()` 最多等 20s；仍不行就抛错，前端提示"语音模型还在加载"。
+- **ASR 没就绪** → `transcribe()` 最多等 20s（模型加载中）；如果 worker 已经退出，会立刻带着具体原因失败，前端字幕显示 `本地转写失败：…`。
 - **ASR 进程挂了** → `asr.mjs` 把 `ready=false`，所有 pending 直接 reject；下次请求会重新 spawn。
 - **导演超时** → 9s 中止，回退到启发式。前端照旧渲染，只是这页不"聪明"。
 
@@ -138,9 +138,9 @@ show(raw) ── derive() ──► 新 section 入场（clip 0.95s）
 
 | 文件 | 行数 | 职责 |
 | --- | --- | --- |
-| `server.mjs` | ~120 | 路由、静态文件、请求体限额 |
-| `director.mjs` | ~200 | 提示词、调用、`normalize()` 白名单、`heuristic()` |
-| `asr.mjs` | ~150 | 子进程生命周期、双队列、超时、统计 |
-| `asr_worker.py` | ~190 | 双后端转写、幻觉过滤、同音/拉丁词修正 |
-| `public/stage.js` | ~1100 | 采集、VAD、状态机、`derive()`、`layoutHTML()`、`show/morph` |
-| `public/stage.css` | ~430 | 三种底色 + 十种构图 + HUD |
+| `server.mjs` | ~160 | 路由、静态文件、请求体限额、本机请求校验 |
+| `director.mjs` | ~220 | 提示词、调用、`normalize()` 白名单、`heuristic()` |
+| `asr.mjs` | ~180 | 子进程生命周期、双队列、超时、统计 |
+| `asr_worker.py` | ~210 | 双后端转写、幻觉过滤、同音/拉丁词修正 |
+| `public/stage.js` | ~1300 | 采集、VAD、状态机、`derive()`、`layoutHTML()`、`show/morph` |
+| `public/stage.css` | ~460 | 三种底色 + 十三种构图 + HUD |

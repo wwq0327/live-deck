@@ -63,7 +63,7 @@ SenseVoice 的 sherpa-onnx 接口不支持 hotwords，但有两个变通：
 
 快车道的模板永远只有文字和色块。想要真图表、真图片，得让 agent 在后台生成 HTML 页面（hyperframes / 手写 DOM），塞进队列，在每个自然停顿点插入。
 
-接口已经预留了：`POST /api/queue` + 前端每次 `show()` 前看一眼队列。
+目前还没有队列接口。要支持慢车道，需要新增 `POST /api/queue`，并让前端在每次 `show()` 前查看队列。
 
 ### 7. 多人 / 长会
 
@@ -77,9 +77,9 @@ SenseVoice 的 sherpa-onnx 接口不支持 hotwords，但有两个变通：
 如果要把这个做成独立开源项目：
 
 - [x] **定许可证**：MIT，见仓库根目录的 `LICENSE`。
-- [ ] **CI**：`npm run check`（只做语法检查）+ 一个 headless 截图回归（现在 `docs/img/*.png` 就是基准图）。
+- [x] **CI**：`npm run check` + `npm test`（normalize/server 回归）；headless 截图回归还没做，`docs/img/*.png` 目前只是人工基准图。
 - [ ] **模型分发**：SenseVoice 的 onnx 有 239MB，不能进仓库。写清楚从哪下、放哪个目录，最好加一个 `npm run fetch-model` 脚本。
-- [ ] **英文 README**：现在只有中文。至少把开头那段翻过去。
+- [x] **英文 README**：`README.en.md` 已存在，之后随中文版同步更新。
 - [ ] **一段 60 秒的 demo 视频**：比十张截图有说服力。
 - [ ] **`sample.wav` 换成有版权的素材**：现在是用系统 TTS 生成的，没有版权问题，但听起来很机械。
 
