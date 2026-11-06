@@ -1,6 +1,8 @@
 // 本地转写常驻进程的管理器：一次加载，之后每句只做推理。
 // ASR_BACKEND=sensevoice（默认，sherpa-onnx + SenseVoice int8）| whisper（openai-whisper）
 // 优先级：final（整句）先于 partial（边说边猜）。
+// ASR_FINAL_WORKER=1 时再起一个只接 final 的 worker：partial 还在推理时，final 不用排队。
+// 代价是多加载一份模型（内存翻倍），所以默认关闭。
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { writeFile, unlink } from 'node:fs/promises';
@@ -12,173 +14,239 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND = process.env.ASR_BACKEND || 'sensevoice';
 const MODEL = BACKEND === 'whisper' ? process.env.ASR_MODEL || 'small' : 'sensevoice-int8';
 const VENV_PY = path.join(ROOT, '.venv', 'bin', 'python');
+const DUAL = process.env.ASR_FINAL_WORKER === '1';
 
-let child = null;
-let ready = false;
-let loading = false;
-let lastError = '';
-let fatalError = '';
 let seq = 0;
-let busy = false;
 
-const pending = new Map(); // id -> {resolve, reject, timer}
-const finals = [];
-const partials = [];
 const stats = { finals: 0, partials: 0, lastMs: 0, lastText: '' };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export function asrStatus() {
-  return {
-    ready,
-    loading,
-    backend: BACKEND,
-    model: MODEL,
-    error: lastError,
-    queued: finals.length + partials.length,
-    ...stats,
-  };
-}
+class AsrWorker {
+  constructor(role) {
+    this.role = role;
+    this.child = null;
+    this.ready = false;
+    this.loading = false;
+    this.lastError = '';
+    this.fatalError = '';
+    this.busy = false;
+    this.pending = new Map();
+    this.finals = [];
+    this.partials = [];
+  }
 
-function spawnWorker() {
-  if (child || loading) return;
-  loading = true;
-  lastError = '';
-  fatalError = '';
-  const env = { ...process.env, ASR_MODEL: process.env.ASR_MODEL || 'small', ASR_BACKEND: BACKEND };
-  const py = process.env.ASR_PYTHON || (BACKEND === 'whisper' ? 'python3' : (existsSync(VENV_PY) ? VENV_PY : 'python3'));
-  const proc = spawn(py, [path.join(ROOT, 'asr_worker.py')], { env, stdio: ['pipe', 'pipe', 'pipe'] });
-  child = proc;
+  get queued() {
+    return this.finals.length + this.partials.length;
+  }
 
-  let buf = '';
-  proc.stdout.setEncoding('utf8');
-  proc.stdout.on('data', (chunk) => {
-    if (child !== proc) return;
-    buf += chunk;
-    let nl;
-    while ((nl = buf.indexOf('\n')) >= 0) {
-      const line = buf.slice(0, nl).trim();
-      buf = buf.slice(nl + 1);
-      if (!line) continue;
-      let msg;
-      try {
-        msg = JSON.parse(line);
-      } catch {
-        continue;
+  spawn() {
+    if (this.child || this.loading) return;
+    this.loading = true;
+    this.lastError = '';
+    this.fatalError = '';
+    const env = {
+      ...process.env,
+      ASR_MODEL: process.env.ASR_MODEL || 'small',
+      ASR_BACKEND: BACKEND,
+      ASR_ROLE: this.role,
+    };
+    const py = process.env.ASR_PYTHON || (BACKEND === 'whisper' ? 'python3' : (existsSync(VENV_PY) ? VENV_PY : 'python3'));
+    const proc = spawn(py, [path.join(ROOT, 'asr_worker.py')], { env, stdio: ['pipe', 'pipe', 'pipe'] });
+    this.child = proc;
+
+    let buf = '';
+    proc.stdout.setEncoding('utf8');
+    proc.stdout.on('data', (chunk) => {
+      if (this.child !== proc) return;
+      buf += chunk;
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let msg;
+        try {
+          msg = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        this.handle(msg);
       }
-      if (msg.ready) {
-        ready = true;
-        loading = false;
-        fatalError = '';
-        console.log(`[asr] 后端就绪 ${msg.model}，加载 ${msg.load_ms}ms`);
-        pump();
-        continue;
-      }
-      if (msg.error && msg.id == null) {
-        // worker 加载失败时只发一条没有 id 的 error，随后退出。
-        // 这条消息必须留给 health / 下一次请求，不能丢。
-        fatalError = msg.error;
-        lastError = msg.error;
-        loading = false;
-        continue;
-      }
-      const job = msg.id != null ? pending.get(msg.id) : null;
-      if (job) {
+    });
+
+    proc.stderr.setEncoding('utf8');
+    proc.stderr.on('data', (d) => {
+      if (this.child !== proc) return;
+      const s = String(d).trim();
+      if (s && !/Warning|warn\(/.test(s)) this.lastError = s.slice(-400);
+    });
+
+    const die = (why) => {
+      if (this.child !== proc) return;
+      this.child = null;
+      this.ready = false;
+      this.loading = false;
+      this.busy = false;
+      this.lastError = this.fatalError || why;
+      for (const [, job] of this.pending) {
         clearTimeout(job.timer);
-        pending.delete(msg.id);
-        busy = false;
-        if (msg.error) job.reject(new Error(msg.error));
-        else job.resolve(msg);
-        pump();
-      } else {
-        busy = false;
-        pump();
+        job.reject(new Error(this.lastError));
       }
+      this.pending.clear();
+      for (const job of this.finals.splice(0)) job.reject(new Error(this.lastError));
+      for (const job of this.partials.splice(0)) job.reject(new Error(this.lastError));
+    };
+    proc.on('exit', (code) => die(`worker exited (${code})`));
+    proc.on('error', (e) => die(`spawn failed: ${e.message}`));
+  }
+
+  handle(msg) {
+    if (msg.ready) {
+      this.ready = true;
+      this.loading = false;
+      this.fatalError = '';
+      console.log(`[asr:${this.role}] 后端就绪 ${msg.model}，加载 ${msg.load_ms}ms`);
+      this.pump();
+      return;
     }
-  });
-
-  proc.stderr.setEncoding('utf8');
-  proc.stderr.on('data', (d) => {
-    if (child !== proc) return;
-    const s = String(d).trim();
-    if (s && !/Warning|warn\(/.test(s)) lastError = s.slice(-400);
-  });
-
-  const die = (why) => {
-    if (child !== proc) return;
-    child = null;
-    ready = false;
-    loading = false;
-    busy = false;
-    lastError = fatalError || why;
-    for (const [, job] of pending) {
+    if (msg.error && msg.id == null) {
+      // worker 加载失败时只发一条没有 id 的 error，随后退出。
+      // 这条消息必须留给 health / 下一次请求，不能丢。
+      this.fatalError = msg.error;
+      this.lastError = msg.error;
+      this.loading = false;
+      return;
+    }
+    const job = msg.id != null ? this.pending.get(msg.id) : null;
+    if (job) {
       clearTimeout(job.timer);
-      job.reject(new Error(lastError));
-    }
-    pending.clear();
-    for (const job of finals.splice(0)) job.reject(new Error(lastError));
-    for (const job of partials.splice(0)) job.reject(new Error(lastError));
-  };
-  proc.on('exit', (code) => die(`worker exited (${code})`));
-  proc.on('error', (e) => die(`spawn failed: ${e.message}`));
-}
-
-function pump() {
-  if (!ready || busy) return;
-  const job = finals.shift() || partials.shift();
-  if (!job) return;
-  if (!child || !child.stdin || !child.stdin.writable) {
-    job.reject(new Error(lastError || 'asr worker not running'));
-    pump();
-    return;
-  }
-  busy = true;
-  pending.set(job.id, job);
-  job.timer = setTimeout(() => {
-    pending.delete(job.id);
-    busy = false;
-    job.reject(new Error('transcribe timeout'));
-    pump();
-  }, 45_000);
-  try {
-    child.stdin.write(JSON.stringify({ id: job.id, wav: job.wav }) + '\n');
-  } catch (err) {
-    clearTimeout(job.timer);
-    pending.delete(job.id);
-    busy = false;
-    job.reject(new Error('write to asr worker failed: ' + err.message));
-    pump();
-  }
-}
-
-export async function transcribe(wavBuffer, { priority = 'final' } = {}) {
-  if (!wavBuffer?.length) return { text: '', ms: 0 };
-  if (!ready) {
-    spawnWorker();
-    if (!ready) {
-      // 模型加载中：给一点等待时间，别直接失败；worker 已经退出则立刻返回。
-      const t0 = Date.now();
-      while (!ready && loading && child && Date.now() - t0 < 20_000) {
-        await new Promise((r) => setTimeout(r, 200));
-      }
-      if (!ready) throw new Error(lastError || 'asr not ready');
+      this.pending.delete(msg.id);
+      this.busy = false;
+      if (msg.error) job.reject(new Error(msg.error));
+      else job.resolve(msg);
+      this.pump();
+    } else {
+      this.busy = false;
+      this.pump();
     }
   }
-  const id = ++seq;
-  const file = path.join(os.tmpdir(), `deck-${process.pid}-${id}.wav`);
-  await writeFile(file, wavBuffer);
 
-  // final 一到，排队中的 partial 已经过期，直接丢掉；否则 worker 会先跑完它们。
-  if (priority !== 'partial') {
-    for (const job of partials.splice(0)) {
+  pump() {
+    if (!this.ready || this.busy) return;
+    const job = this.finals.shift() || this.partials.shift();
+    if (!job) return;
+    if (!this.child || !this.child.stdin || !this.child.stdin.writable) {
+      job.reject(new Error(this.lastError || 'asr worker not running'));
+      this.pump();
+      return;
+    }
+    this.busy = true;
+    this.pending.set(job.id, job);
+    job.timer = setTimeout(() => {
+      this.pending.delete(job.id);
+      this.busy = false;
+      job.reject(new Error('transcribe timeout'));
+      this.pump();
+    }, 45_000);
+    try {
+      this.child.stdin.write(JSON.stringify({ id: job.id, wav: job.wav }) + '\n');
+    } catch (err) {
+      clearTimeout(job.timer);
+      this.pending.delete(job.id);
+      this.busy = false;
+      job.reject(new Error('write to asr worker failed: ' + err.message));
+      this.pump();
+    }
+  }
+
+  dropPartials() {
+    for (const job of this.partials.splice(0)) {
       clearTimeout(job.timer);
       job.reject(new Error('superseded by final'));
     }
   }
 
-  const reply = await new Promise((resolve, reject) => {
-    const job = { id, wav: file, resolve, reject, timer: null };
-    (priority === 'partial' ? partials : finals).push(job);
-    pump();
-  }).finally(() => unlink(file).catch(() => {}));
+  run(file, priority) {
+    return new Promise((resolve, reject) => {
+      if (!this.ready) {
+        reject(new Error(this.lastError || 'asr worker not ready'));
+        return;
+      }
+      const job = { id: ++seq, wav: file, resolve, reject, timer: null };
+      (priority === 'partial' ? this.partials : this.finals).push(job);
+      this.pump();
+    });
+  }
+}
+
+const main = new AsrWorker('main');
+const fast = DUAL ? new AsrWorker('fast') : null;
+
+async function waitReady(w, timeout = 20_000) {
+  w.spawn();
+  const t0 = Date.now();
+  while (!w.ready && w.loading && w.child && Date.now() - t0 < timeout) await sleep(200);
+  if (!w.ready) throw new Error(w.lastError || 'asr not ready');
+}
+
+async function chooseWorker(priority) {
+  if (priority === 'partial') {
+    await waitReady(main);
+    return main;
+  }
+  if (fast?.ready) return fast;
+  if (main.ready) return main;
+  // 两个都还在加载：先等，谁先好就用谁；都不要等到天荒地老。
+  const t0 = Date.now();
+  while (!fast?.ready && !main.ready && Date.now() - t0 < 20_000) {
+    if (!main.loading && !main.child && !fast?.loading) break;
+    await sleep(200);
+  }
+  if (fast?.ready) return fast;
+  if (main.ready) return main;
+  throw new Error(main.lastError || fast?.lastError || 'asr not ready');
+}
+
+export function asrStatus() {
+  return {
+    ready: main.ready,
+    loading: main.loading,
+    backend: BACKEND,
+    model: MODEL,
+    error: main.lastError,
+    queued: main.queued + (fast?.queued || 0),
+    dual: Boolean(fast),
+    fastReady: Boolean(fast?.ready),
+    fastError: fast?.lastError || '',
+    ...stats,
+  };
+}
+
+export async function transcribe(wavBuffer, { priority = 'final' } = {}) {
+  if (!wavBuffer?.length) return { text: '', ms: 0 };
+  const worker = await chooseWorker(priority);
+  // final 一到，所有排队中的 partial 都过期了，直接丢掉。
+  // 正在跑的 partial 不在这里取消（final 走 fast 时也不需要取消它）。
+  if (priority !== 'partial') main.dropPartials();
+
+  const id = ++seq;
+  const file = path.join(os.tmpdir(), `deck-${process.pid}-${id}.wav`);
+  await writeFile(file, wavBuffer);
+
+  let reply;
+  try {
+    reply = await worker.run(file, priority);
+  } catch (err) {
+    // fast worker 挂了就退回 main；main 还忙的话 final 仍会排在 partial 后面，但至少不丢请求。
+    if (worker === fast && priority !== 'partial' && main.ready) {
+      main.dropPartials();
+      reply = await main.run(file, priority);
+    } else {
+      throw err;
+    }
+  } finally {
+    unlink(file).catch(() => {});
+  }
 
   if (priority === 'partial') stats.partials++;
   else stats.finals++;
@@ -188,5 +256,6 @@ export async function transcribe(wavBuffer, { priority = 'final' } = {}) {
 }
 
 export function warmAsr() {
-  spawnWorker();
+  main.spawn();
+  fast?.spawn();
 }

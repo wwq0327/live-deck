@@ -77,6 +77,7 @@ curl -s http://127.0.0.1:4400/api/health | python3 -m json.tool
 - `ASR_BACKEND=whisper` 但用的是 large 模型 → 换 `ASR_MODEL=small` 或 `tiny`。
 - 第一次请求（模型还在加载）→ 等 1–2 秒，`asr.loading` 会变 `false`；如果 `asr.error` 已经给出具体原因，说明 worker 退出了，不会空等 20 秒。
 - CPU 被别的进程吃满 → `ASR_THREADS` 调小反而可能更快（默认 2）。
+- final 总比 partial 慢一截 → worker 串行，final 会排在正在跑的 partial 后面；`ASR_FINAL_WORKER=1` 再起一个 final 专用 worker（内存翻倍，SenseVoice 约多 239MB）。health 里 `asr.dual` / `asr.fastReady` 可确认。
 
 **导演慢**（>`[direct]` 那一行 2000ms）：检查是不是忘了关思考。请求体里必须有 `thinking: {"type":"disabled"}`；`max_tokens` 压得太低（比如 120）会让思考链吃光配额、`content` 为空。
 

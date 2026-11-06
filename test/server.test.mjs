@@ -84,6 +84,13 @@ test('health 正常返回', async () => {
   assert.equal(JSON.parse(r.body).ok, true);
 });
 
+test('health 暴露 ASR worker 状态', async () => {
+  const r = await request('/api/health');
+  const body = JSON.parse(r.body);
+  assert.equal(body.asr.dual, false);
+  assert.equal(body.asr.fastReady, false);
+});
+
 test('拒绝非本机 Host（DNS rebinding）', async () => {
   const r = await request('/api/health', { headers: { host: 'evil.example' } });
   assert.equal(r.status, 403);

@@ -77,6 +77,14 @@ pip install openai-whisper          # 或者用系统里的 whisper
 ASR_BACKEND=whisper ASR_MODEL=small node server.mjs
 ```
 
+如果 partial 的 100–300ms 也会挡住收句，可以再开一个只接 final 的 worker：
+
+```bash
+ASR_FINAL_WORKER=1 node server.mjs
+```
+
+实测 20 秒 partial 正在跑时再发 10 秒 final：final 从 442ms 降到 159ms。代价是再加载一份模型（SenseVoice 约 239MB），内存翻倍；默认关闭。
+
 **导演模型**需要一个 DeepSeek Key：先读环境变量 `DEEPSEEK_API_KEY`，没有就读 `~/.dsh/.credentials.yaml`。
 没有 Key 也能跑——自动降级成本地关键词规则，出页变笨但不会挂。
 

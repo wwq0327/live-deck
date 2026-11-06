@@ -24,7 +24,7 @@
                 │ POST /api/direct                    (JSON)
 ┌───────────────▼──────────────────────────────────────────────────┐
 │  server.mjs     静态文件 + 两个 API，净身无依赖                    │
-│  asr.mjs        spawn 一个 Python 常驻进程；两条优先级队列         │
+│  asr.mjs        spawn Python 常驻进程；两条优先级队列；可双 worker  │
 │  director.mjs   提示词 + 一次 chat/completions + JSON 归一化       │
 └───────────────┬──────────────────────────────────────────────────┘
                 │ stdin/stdout 逐行 JSON
@@ -128,6 +128,7 @@ show(raw) ── derive() ──► 新 section 入场（clip 0.95s）
 - **没有 Key** → `director.mjs` 的 `heuristic()` 用关键词出页（数字→stat、对比词→compare、序数词→steps），不报错。
 - **ASR 没就绪** → `transcribe()` 最多等 20s（模型加载中）；如果 worker 已经退出，会立刻带着具体原因失败，前端字幕显示 `本地转写失败：…`。
 - **ASR 进程挂了** → `asr.mjs` 把 `ready=false`，所有 pending 直接 reject；下次请求会重新 spawn。
+- **final 被 partial 挡住** → 默认单 worker 会等正在跑的 partial；`ASR_FINAL_WORKER=1` 再起一个只接 final 的 worker，代价是多一份模型内存。
 - **导演超时** → 9s 中止，回退到启发式。前端照旧渲染，只是这页不"聪明"。
 
 ## 为什么不是 agent
@@ -142,7 +143,7 @@ show(raw) ── derive() ──► 新 section 入场（clip 0.95s）
 | --- | --- | --- |
 | `server.mjs` | ~160 | 路由、静态文件、请求体限额、本机请求校验 |
 | `director.mjs` | ~220 | 提示词、调用、`normalize()` 白名单、`heuristic()` |
-| `asr.mjs` | ~180 | 子进程生命周期、双队列、超时、统计 |
+| `asr.mjs` | ~250 | 子进程生命周期、双队列、超时、统计；可选 final 专用 worker |
 | `asr_worker.py` | ~210 | 双后端转写、幻觉过滤、同音/拉丁词修正 |
 | `public/stage.js` | ~1300 | 采集、VAD、状态机、`derive()`、`layoutHTML()`、`show/morph` |
 | `public/stage.css` | ~460 | 三种底色 + 十三种构图 + HUD |
