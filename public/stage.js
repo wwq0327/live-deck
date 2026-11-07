@@ -85,6 +85,31 @@ function shape(points) {
   return { n: pts.length, max };
 }
 
+// 防重排不能只换模板：目标模板要能承载当前内容，必要时补字段。
+function canAlt(L, s) {
+  if (L === 'quote' || L === 'compare' || L === 'stat' || L === 'stats') return null;
+  const alt = {
+    hero: 'band', band: 'split', split: 'splitflip', splitflip: 'hero',
+    cards: 'chips', chips: 'cards', bullets: 'steps', steps: 'bullets',
+    title: s.subtitle ? 'split' : 'band',
+  }[L];
+  if (!alt) return null;
+  const ptsList = s.points || [];
+  const stepsList = s.steps || [];
+  const pts = ptsList.length;
+  const steps = stepsList.length;
+  if (alt === 'steps') {
+    if (!steps && !pts) return null;
+    if (pts) s.steps = [...stepsList, ...ptsList].slice(0, 3);
+  } else if (alt === 'bullets' || alt === 'cards' || alt === 'chips') {
+    if (!pts && !steps) return null;
+    if (steps) s.points = [...stepsList, ...ptsList].slice(0, 3);
+  } else if (!s.title && !pts && !s.subtitle) {
+    return null;
+  }
+  return alt;
+}
+
 function derive(s, settle) {
   const out = { ...s };
   if (out.pinned) { out.skin = out.skin || 'dark'; return out; }
@@ -125,19 +150,8 @@ function derive(s, settle) {
 
   // 2) 避免连续两页同一个版式（这是"看起来都一样"的主因）
   const prev = settle ? RECENT[RECENT.length - 2] : RECENT[RECENT.length - 1];
-  const alt = {
-    hero: 'band',
-    band: 'split',
-    split: 'splitflip',
-    splitflip: 'hero',
-    cards: 'chips',
-    chips: 'cards',
-    bullets: 'steps',
-    steps: 'bullets',
-    title: out.subtitle ? 'split' : 'band',
-    quote: 'hero',
-  }[L];
-  if (prev === L && alt) L = alt;
+  const alt = prev === L ? canAlt(L, out) : null;
+  if (alt) L = alt;
   // 连续三页都是"一句话"时，逼一版结构化的
   if (RECENT.length >= 2 && RECENT.every((x) => x === 'hero' || x === 'title' || x === 'band') && (L === 'hero' || L === 'title' || L === 'band')) {
     if (sh && sh.n >= 2) L = sh.max <= 8 ? 'chips' : 'cards';
@@ -326,6 +340,7 @@ function layoutHTML(s) {
 
 const state = { transcript: '', current: null, history: [], n: 0, busy: false, pending: false, spec: null, ahead: null, live: null, seg: 0, listening: false };
 let epoch = 0;
+let pageSeq = 0;
 
 const DEBUG = params.get('debug') === '1';
 if (DEBUG) window.__d = { get recent() { return RECENT.slice(); }, get state() { return state; } };
@@ -354,7 +369,9 @@ function show(raw, opts = {}) {
     if (!slide.skin || slide.skin === 'cream') slide.skin = 'dark';
   }
   const n = state.n;
+  slide.pageId = ++pageSeq;
   const el = document.createElement('section');
+  el.dataset.pageId = String(slide.pageId);
   el.className = slideClass(slide);
   el.style.setProperty('--accent', slide.accent || DEFAULT_ACCENT);
   el.innerHTML = layoutHTML(slide);
@@ -378,16 +395,19 @@ function show(raw, opts = {}) {
 
 /* 就地改写当前这一页：说话过程中页面跟着话长，而不是一页一页翻 */
 function morph(next, opts = {}) {
-  const cur = state.current;
+  const cur = opts.base || state.current;
   if (!cur || !next) return;
-  const el = [...deck.querySelectorAll('.slide')].pop();
+  const targetId = opts.targetId;
+  const el = targetId
+    ? deck.querySelector(`.slide[data-page-id="${targetId}"]`)
+    : [...deck.querySelectorAll('.slide')].pop();
   if (!el) return;
   const young = state.live ? performance.now() - state.live.t0 < 2400 : false;
   const layout = opts.forceLayout || young ? next.layout || cur.layout : cur.layout;
   const slide = derive({ ...cur, ...next, layout }, true);
   slide.points = opts.lockPoints && (cur.points || []).length > (next.points || []).length ? cur.points : slide.points;
-  state.current = slide;
-  if (state.live) state.live.slide = slide;
+  if (!targetId || state.current?.pageId === slide.pageId) state.current = slide;
+  if (state.live && state.live.slide?.pageId === slide.pageId) state.live.slide = slide;
   el.className = slideClass(slide) + ' soft';
   document.body.dataset.skin = slide.skin || 'dark';
   dbg('morph', state.n - 1, slide.layout, slide.title);
@@ -520,11 +540,19 @@ async function decide(startedAt, snapshot, expectedEpoch) {
   try {
     const seed = lastSentence(state.transcript);
     const live = snapshot !== undefined ? snapshot : state.live;
+    // 旧句子的 final 不能写到已经开始的下一句页上。
+    if (live && live.slide?.pageId && state.current?.pageId !== live.slide.pageId) {
+      dbg('decide dropped', 'stale page', live.slide.title);
+      return;
+    }
     const cur = live && live.local ? { ...(live.slide || {}), provisional: true } : undefined;
     let streamed = false;
     const res = await askDirect('decide', undefined, undefined, cur, (ev) => {
       if (myEpoch !== epoch || !ev.title) return;
-      const el = [...deck.querySelectorAll('.slide')].pop();
+      if (live?.slide?.pageId && state.current?.pageId !== live.slide.pageId) return;
+      const el = live?.slide?.pageId
+        ? deck.querySelector(`.slide[data-page-id="${live.slide.pageId}"]`)
+        : [...deck.querySelectorAll('.slide')].pop();
       if (!el) return;
       const h = el.querySelector('h1,h2');
       if (!h) return;
@@ -533,6 +561,10 @@ async function decide(startedAt, snapshot, expectedEpoch) {
       streamed = true;
     });
     if (myEpoch !== epoch) return;
+    if (live?.slide?.pageId && state.current?.pageId !== live.slide.pageId) {
+      dbg('decide dropped', 'page moved', live.slide.title);
+      return;
+    }
     let instant = false;
     dbg('decide', res.action, res.title, live ? (live.local ? 'local' : 'live') : 'none');
 
@@ -540,10 +572,10 @@ async function decide(startedAt, snapshot, expectedEpoch) {
     if (live && live.slide) {
       if (live.local && res.action === 'new_slide') {
         // 本地先上的临时页：模型说什么就换成什么
-        morph({ ...res, noInvert: false, skin: res.skin || undefined }, { forceLayout: true });
+        morph({ ...res, noInvert: false, skin: res.skin || undefined }, { forceLayout: true, targetId: live.slide.pageId, base: live.slide });
         instant = true;
       } else if (res.action === 'new_slide' && (topicNear(res.title, live.slide.title) || topicNear(res.title, seed))) {
-        morph(res, { lockPoints: true });
+        morph(res, { lockPoints: true, targetId: live.slide.pageId, base: live.slide });
         instant = true;
       } else if (res.action === 'new_slide') {
         show(res); // 话题换了才翻页
@@ -698,6 +730,7 @@ const topicNear = (a, b) => {
 };
 
 window.morphDebug = () => ({ live: Boolean(state.live), n: state.n, title: state.current?.title });
+if (DEBUG) window.__deckDebug = { derive, layoutHTML, show, morph, state, RECENT, commit };
 
 async function speculate() {
   if (!state.current || state.busy || aheadBusy || state.ahead) return;
@@ -999,9 +1032,12 @@ function processChunk(chunk) {
       vad.silence += n;
       vad.seg.push(chunk);
       vad.segLen += n;
-      if (vad.silence >= SR * CLOSE_MS || vad.segLen > SR * 20) closeSegment();
+      if (vad.silence >= SR * CLOSE_MS) closeSegment();
     }
   }
+
+  // 20 秒上限必须独立于静音判断：连续有声时也要能收句。
+  if (vad.active && vad.segLen > SR * 20) closeSegment();
 
   // 已经在静音尾部时别再发新 partial：收句马上就到，发了也只会挡住 final。
   if (
@@ -1014,6 +1050,8 @@ function processChunk(chunk) {
     firePartial();
   }
 }
+
+if (DEBUG) Object.assign(window.__deckDebug, { processChunk, clearVad, vad });
 
 async function startMic() {
   if (mic) return;

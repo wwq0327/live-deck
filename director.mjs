@@ -256,19 +256,34 @@ export function heuristic({ transcript }) {
       accent,
     };
   }
-  if (/对比|相比|以前|过去|现在|反而|但是/.test(s)) {
-    return {
-      action: 'new_slide',
-      layout: 'compare',
-      kicker: '对比',
-      title: clip(s, 20),
-      left: { label: '以前', value: '慢' },
-      right: { label: '现在', value: '快' },
-      accent,
-    };
+  // 对比页只从原话里取左右值；提不出两侧就退回后面的忠实列表，不填“慢/快”。
+  const clauses = s.split(/[，,；;。！？!?]/).map((x) => x.trim()).filter(Boolean);
+  const stripLead = (x) => x.replace(/^[：:，,。\s]+/, '').replace(/^(反而|却|但|但是|而|又)\s*/, '').trim();
+  const before = clauses.find((x) => /^(以前|过去|之前|原来|原本|从前)/.test(x));
+  const after = clauses.find((x) => /^(现在|如今|目前|当前)/.test(x));
+  if (before && after) {
+    const leftVal = clip(stripLead(before.replace(/^.*?(以前|过去|之前|原来|原本|从前)\s*/, '')), 16);
+    const rightVal = clip(stripLead(after.replace(/^.*?(现在|如今|目前|当前)\s*/, '')), 16);
+    if (leftVal && rightVal && leftVal !== rightVal) {
+      return {
+        action: 'new_slide',
+        layout: 'compare',
+        kicker: '对比',
+        title: clip(s, 20),
+        left: { label: '以前', value: leftVal },
+        right: { label: '现在', value: rightVal },
+        accent,
+      };
+    }
   }
-  if (/第一|第二|第三|首先|然后|最后|步骤/.test(s)) {
-    return { action: 'new_slide', layout: 'steps', kicker: '路径', title: clip(s, 20), steps: ['听', '想', '画'], accent };
+  // 步骤只取原文里的步骤短语；提不出两条就不硬造“听/想/画”。
+  const steps = clauses
+    .filter((x) => /^(第[一二三四五六七八九十]+步|首先|然后|最后|接着|步骤)/.test(x))
+    .map((x) => clip(stripLead(x.replace(/^(第[一二三四五六七八九十]+步|首先|然后|最后|接着|步骤)\s*/, '')), 14))
+    .filter((x) => x.length >= 2)
+    .slice(0, 3);
+  if (steps.length >= 2) {
+    return { action: 'new_slide', layout: 'steps', kicker: '路径', title: clip(s, 20), steps, accent };
   }
   if ([...s].length <= 18) {
     return { action: 'new_slide', layout: 'bigidea', kicker: '一句', title: clip(s, 20), accent };

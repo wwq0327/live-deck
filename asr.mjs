@@ -194,17 +194,13 @@ async function chooseWorker(priority) {
     await waitReady(main);
     return main;
   }
+  // final 不能因为 worker 已经退出就永久失败：fast 挂了先拉起来，
+  // main 不在就 spawn/等待；有界重启，避免每次请求都堆一个进程。
+  if (fast && !fast.ready && !fast.loading) fast.spawn();
   if (fast?.ready) return fast;
-  if (main.ready) return main;
-  // 两个都还在加载：先等，谁先好就用谁；都不要等到天荒地老。
-  const t0 = Date.now();
-  while (!fast?.ready && !main.ready && Date.now() - t0 < 20_000) {
-    if (!main.loading && !main.child && !fast?.loading) break;
-    await sleep(200);
-  }
+  if (!main.ready) await waitReady(main);
   if (fast?.ready) return fast;
-  if (main.ready) return main;
-  throw new Error(main.lastError || fast?.lastError || 'asr not ready');
+  return main;
 }
 
 export function asrStatus() {
@@ -238,8 +234,12 @@ export async function transcribe(wavBuffer, { priority = 'final' } = {}) {
     reply = await worker.run(file, priority);
   } catch (err) {
     // fast worker 挂了就退回 main；main 还忙的话 final 仍会排在 partial 后面，但至少不丢请求。
-    if (worker === fast && priority !== 'partial' && main.ready) {
+    if (worker === fast && priority !== 'partial') {
+      // fast 失败时它可能已经删掉/关闭了输入文件；用内存里的 wavBuffer 重建一次，
+      // 并把临时文件的所有权收回到父进程。
+      if (!main.ready) await waitReady(main);
       main.dropPartials();
+      await writeFile(file, wavBuffer);
       reply = await main.run(file, priority);
     } else {
       throw err;

@@ -200,11 +200,7 @@ def main():
             )
         except Exception as e:  # noqa: BLE001
             print(json.dumps({"id": rid, "error": str(e)}, ensure_ascii=False), flush=True)
-        finally:
-            try:
-                os.unlink(path)
-            except OSError:
-                pass
+        # 临时文件由 Node 父进程统一清理：重试/回退时父进程还要用同一份音频。
 
 
 if __name__ == "__main__":

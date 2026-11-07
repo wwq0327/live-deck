@@ -43,8 +43,16 @@ test('heuristic 能覆盖数字、对比、步骤和长句', () => {
   assert.equal(stats.layout, 'stats');
   assert.equal(stats.stats.length, 3);
   assert.deepEqual(stats.stats[1], { value: '40', unit: '%', label: '留存' });
-  assert.equal(heuristic({ transcript: '以前很慢，现在很快' }).layout, 'compare');
-  assert.equal(heuristic({ transcript: '第一步先听，第二步再想' }).layout, 'steps');
+  const cmp = heuristic({ transcript: '以前很快，现在反而很慢' });
+  assert.equal(cmp.layout, 'compare');
+  assert.equal(cmp.left.value, '很快');
+  assert.equal(cmp.right.value, '很慢');
+  const steps = heuristic({ transcript: '第一步备份数据库，第二步升级服务，最后检查结果。' });
+  assert.equal(steps.layout, 'steps');
+  assert.deepEqual(steps.steps, ['备份数据库', '升级服务', '检查结果']);
+  assert.notDeepEqual(steps.steps, ['听', '想', '画']);
+  assert.notEqual(heuristic({ transcript: '这次没有对比，只是说明一下这件事' }).layout, 'compare');
+  assert.notEqual(heuristic({ transcript: '我们讨论步骤，但没有先后顺序' }).layout, 'steps');
   assert.equal(heuristic({ transcript: '这是一句很短的话' }).layout, 'bigidea');
   assert.equal(heuristic({ transcript: '这个事情我们做了很久，中间遇到很多问题，后来终于解决了，也学到了不少东西' }).layout, 'bullets');
   assert.doesNotThrow(() => heuristic({}));
