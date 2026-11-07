@@ -128,6 +128,7 @@ ASR_FINAL_WORKER=1 node server.mjs
 
 | 文档 | 内容 |
 | --- | --- |
+| [持续理解与动态思维可视化方案](docs/plans/2026-11-07-continuous-visual-thinking/README.md) | 待开发方向：需求、协议、验收与 Flash 开发交接 |
 | [docs/architecture.md](docs/architecture.md) | 数据流、时序、状态机、竞态处理、延迟预算 |
 | [docs/director.md](docs/director.md) | 导演协议：JSON schema、提示词全文、调优记录、换模型 |
 | [docs/layouts.md](docs/layouts.md) | 13 种构图 × 3 种底色、选择规则、加一种新版式 |
