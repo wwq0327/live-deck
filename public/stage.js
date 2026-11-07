@@ -338,7 +338,7 @@ function layoutHTML(s) {
   }
 }
 
-const state = { transcript: '', current: null, history: [], n: 0, busy: false, pending: false, spec: null, ahead: null, live: null, seg: 0, listening: false };
+const state = { transcript: '', current: null, history: [], n: 0, busy: false, pending: [], spec: null, ahead: null, live: null, seg: 0, listening: false };
 let epoch = 0;
 let pageSeq = 0;
 
@@ -519,7 +519,8 @@ async function commit(text, t0, snapshot) {
   state.transcript = (state.transcript + ' ' + text).trim();
   caption(text, 'final');
   if (state.busy) {
-    state.pending = { t0, snapshot };
+    // 不覆盖：连续输入排队，按顺序各处理一次；每条记住自己的文本快照。
+    state.pending.push({ t0, snapshot, text, transcript: state.transcript });
     return;
   }
   // 没有活页、也没有可复用的快照：先本地上一页，别让首屏空等模型。
@@ -527,10 +528,10 @@ async function commit(text, t0, snapshot) {
     provisional(text);
     if (state.live) snapshot = state.live;
   }
-  await decide(t0, snapshot);
+  await decide(t0, snapshot, undefined, text);
 }
 
-async function decide(startedAt, snapshot, expectedEpoch) {
+async function decide(startedAt, snapshot, expectedEpoch, textOverride) {
   if (expectedEpoch !== undefined && expectedEpoch !== epoch) return;
   const myEpoch = epoch;
   state.busy = true;
@@ -538,7 +539,7 @@ async function decide(startedAt, snapshot, expectedEpoch) {
   liveLabel.textContent = '思考';
   const t0 = startedAt || performance.now();
   try {
-    const seed = lastSentence(state.transcript);
+    const seed = lastSentence(textOverride || state.transcript);
     const live = snapshot !== undefined ? snapshot : state.live;
     // 旧句子的 final 不能写到已经开始的下一句页上。
     if (live && live.slide?.pageId && state.current?.pageId !== live.slide.pageId) {
@@ -547,12 +548,12 @@ async function decide(startedAt, snapshot, expectedEpoch) {
     }
     const cur = live && live.local ? { ...(live.slide || {}), provisional: true } : undefined;
     let streamed = false;
-    const res = await askDirect('decide', undefined, undefined, cur, (ev) => {
+    const res = await askDirect('decide', textOverride, undefined, cur, (ev) => {
       if (myEpoch !== epoch || !ev.title) return;
-      if (live?.slide?.pageId && state.current?.pageId !== live.slide.pageId) return;
-      const el = live?.slide?.pageId
-        ? deck.querySelector(`.slide[data-page-id="${live.slide.pageId}"]`)
-        : [...deck.querySelectorAll('.slide')].pop();
+      // 只有已经绑定到这一句的活页才接受流式标题；没有活页时不能
+      // 把新句子的半个标题写到上一页上（排队句尤其明显）。
+      if (!live?.slide?.pageId || state.current?.pageId !== live.slide.pageId) return;
+      const el = deck.querySelector(`.slide[data-page-id="${live.slide.pageId}"]`);
       if (!el) return;
       const h = el.querySelector('h1,h2');
       if (!h) return;
@@ -638,11 +639,12 @@ async function decide(startedAt, snapshot, expectedEpoch) {
       state.busy = false;
       liveEl.classList.remove('thinking');
       liveLabel.textContent = demoRunning ? '演示' : state.listening ? '听' : '待机';
-      speculate();
-      if (state.pending) {
-        const p = state.pending;
-        state.pending = false;
-        await decide(p.t0, p.snapshot, myEpoch);
+      if (state.pending.length) {
+        const p = state.pending.shift();
+        // 排队句按“新起一页”处理，不能拿上一句的活页快照去 morph 当前页。
+        await decide(p.t0, null, myEpoch, p.text);
+      } else {
+        speculate();
       }
     }
   }
@@ -1276,7 +1278,7 @@ function reset({ keepDemo = false } = {}) {
   state.spec = null;
   state.ahead = null;
   state.busy = false;
-  state.pending = null;
+  state.pending = [];
   state.live = null;
   state.n = 0;
   state.seg = 0;
