@@ -25,7 +25,7 @@ export class TranscriptLedger {
     this.epoch = epoch;
     this.now = now;
     this.entries = new Map();
-    this.receipts = new Map();
+    this.consumed = new Map();
     this.inputVersion = 0;
     this.lastOrder = 0;
     this.invalidationsTotal = 0;
@@ -55,7 +55,7 @@ export class TranscriptLedger {
   reset({ epoch = this.epoch + 1 } = {}) {
     this.epoch = epoch;
     this.entries.clear();
-    this.receipts.clear();
+    this.consumed.clear();
     this.inputVersion = 0;
     this.lastOrder = 0;
     this.invalidationsTotal = 0;
@@ -275,7 +275,7 @@ export class TranscriptLedger {
   }
 
   receipts() {
-    return Object.fromEntries(this.receipts);
+    return Object.fromEntries(this.consumed);
   }
 
   markConsumed(considered) {
@@ -283,8 +283,8 @@ export class TranscriptLedger {
     for (const item of considered || []) {
       if (!item || !isText(item.segment_id, 64) || !isInt(item.revision, 1)) continue;
       if (!this.isCurrent(item.segment_id, item.revision)) continue;
-      if (this.receipts.get(item.segment_id) === item.revision) continue;
-      this.receipts.set(item.segment_id, item.revision);
+      if (this.consumed.get(item.segment_id) === item.revision) continue;
+      this.consumed.set(item.segment_id, item.revision);
       changed = true;
     }
     return changed;
@@ -292,11 +292,11 @@ export class TranscriptLedger {
 
   isConsumed(segmentId) {
     const entry = this.entries.get(segmentId);
-    return Boolean(entry) && this.receipts.get(segmentId) === entry.revision;
+    return Boolean(entry) && this.consumed.get(segmentId) === entry.revision;
   }
 
   unconsumedFinals() {
-    return this.segments({ phase: 'final' }).filter((e) => this.receipts.get(e.segment_id) !== e.revision);
+    return this.segments({ phase: 'final' }).filter((e) => this.consumed.get(e.segment_id) !== e.revision);
   }
 
   latestPartial() {
@@ -307,7 +307,7 @@ export class TranscriptLedger {
   pendingCount() {
     let n = 0;
     for (const entry of this.entries.values()) {
-      if (this.receipts.get(entry.segment_id) !== entry.revision) n += 1;
+      if (this.consumed.get(entry.segment_id) !== entry.revision) n += 1;
     }
     return n;
   }
@@ -319,7 +319,7 @@ export class TranscriptLedger {
   oldestPendingAgeMs(nowMs = this.now()) {
     let oldest = null;
     for (const entry of this.entries.values()) {
-      if (this.receipts.get(entry.segment_id) === entry.revision) continue;
+      if (this.consumed.get(entry.segment_id) === entry.revision) continue;
       const age = nowMs - entry.received_at_ms;
       if (oldest === null || age > oldest) oldest = age;
     }
@@ -332,7 +332,7 @@ export class TranscriptLedger {
    */
   buildSources({ nowMs = this.now(), maxSources = LIMITS.maxSources, maxChars = LIMITS.maxSourceChars } = {}) {
     const all = this.segments();
-    const finals = all.filter((e) => e.phase === 'final' && this.receipts.get(e.segment_id) !== e.revision);
+    const finals = all.filter((e) => e.phase === 'final' && this.consumed.get(e.segment_id) !== e.revision);
     const latest = this.latestPartial();
     const selected = [];
     const seen = new Set();
@@ -386,7 +386,7 @@ export class TranscriptLedger {
 
     // 已消费的最近原文：从新到旧补进窗口，供代词、回指与既有证据使用。
     const consumed = all
-      .filter((e) => this.receipts.get(e.segment_id) === e.revision)
+      .filter((e) => this.consumed.get(e.segment_id) === e.revision)
       .filter((e) => (e.segment_id !== latest?.segment_id || e.revision !== latest?.revision))
       .filter((e) => nowMs - e.received_at_ms <= LIMITS.contextWindowMs);
     for (let i = consumed.length - 1; i >= 0; i--) {

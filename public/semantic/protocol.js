@@ -182,8 +182,9 @@ function checkNode(node, requestId, { requireNew }) {
   if (node.speaker_id !== undefined && !isText(node.speaker_id, LIMITS.maxSpeaker, { allowEmpty: true })) {
     errors.push(`${ref}: speaker_id invalid`);
   }
-  if (node.state !== undefined && !oneOf(node.state, OBJECT_STATES)) errors.push(`${ref}: state invalid`);
-  if (node.state === 'retracted') errors.push(`${ref}: use retract op instead of state=retracted`);
+  if (node.state !== undefined && !oneOf(node.state, ['supported', 'tentative'])) {
+    errors.push(`${ref}: state must be supported or tentative; use retract op to retract`);
+  }
   errors.push(...checkEvidence(node.evidence).map((e) => `${ref}: ${e}`));
   return errors;
 }
@@ -205,8 +206,9 @@ function checkEdge(edge, requestId, { requireNew }) {
   if (edge.speaker_id !== undefined && !isText(edge.speaker_id, LIMITS.maxSpeaker, { allowEmpty: true })) {
     errors.push(`${ref}: speaker_id invalid`);
   }
-  if (edge.state !== undefined && !oneOf(edge.state, OBJECT_STATES)) errors.push(`${ref}: state invalid`);
-  if (edge.state === 'retracted') errors.push(`${ref}: use retract op instead of state=retracted`);
+  if (edge.state !== undefined && !oneOf(edge.state, ['supported', 'tentative'])) {
+    errors.push(`${ref}: state must be supported or tentative; use retract op to retract`);
+  }
   errors.push(...checkEvidence(edge.evidence).map((e) => `${ref}: ${e}`));
   return errors;
 }

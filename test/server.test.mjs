@@ -160,3 +160,81 @@ test('HEAD 不写 body，wav 有正确 MIME', async () => {
   assert.equal(wav.status, 200);
   assert.equal(wav.headers['content-type'], 'audio/wav');
 });
+
+function understandBody(over = {}) {
+  return {
+    schema_version: 1,
+    request_id: 'r1',
+    epoch: 1,
+    base_graph_version: 0,
+    input_version: 1,
+    sources: [
+      {
+        segment_id: 'seg1',
+        revision: 1,
+        order: 1,
+        phase: 'final',
+        speaker_id: 'unknown',
+        text: '工具越来越多，所以需要反复切换',
+      },
+    ],
+    context: { active_scene: null, nodes: [], edges: [], recent_scenes: [], unresolved: [] },
+    ...over,
+  };
+}
+
+test('POST /api/understand 无 Key 时明确降级，不伪造图操作', async () => {
+  const r = await request('/api/understand', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(understandBody()),
+  });
+  assert.equal(r.status, 200);
+  const body = JSON.parse(r.body);
+  assert.equal(body.status, 'degraded');
+  assert.equal(body.reason, 'no_key');
+  assert.deepEqual(body.ops, []);
+  assert.deepEqual(body.considered, []);
+  assert.equal(body.request_id, 'r1');
+  assert.equal(body.base_graph_version, 0);
+});
+
+test('POST /api/understand 拒绝非法请求形状', async () => {
+  const bad = await request('/api/understand', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(understandBody({ schema_version: 2 })),
+  });
+  assert.equal(bad.status, 400);
+  assert.match(JSON.parse(bad.body).error, /schema_version/);
+
+  const empty = await request('/api/understand', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(understandBody({ sources: [] })),
+  });
+  assert.equal(empty.status, 400);
+
+  const broken = await request('/api/understand', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{oops',
+  });
+  assert.equal(broken.status, 400);
+});
+
+test('POST /api/understand 沿用本机 Origin 与体积边界', async () => {
+  const cross = await request('/api/understand', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
+    body: JSON.stringify(understandBody()),
+  });
+  assert.equal(cross.status, 403);
+
+  const huge = await request('/api/understand', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(understandBody({ padding: 'x'.repeat(600 * 1024) })),
+  });
+  assert.equal(huge.status, 413);
+});
