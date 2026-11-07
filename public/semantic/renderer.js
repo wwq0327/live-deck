@@ -32,6 +32,7 @@ export class SemanticRenderer {
     this.height = height;
     this.nodeEls = new Map();
     this.edgeEls = new Map();
+    this.groupEls = new Map();
     this.exiting = new Map();
     this.timers = new Set();
     this.sceneId = null;
@@ -47,6 +48,14 @@ export class SemanticRenderer {
     this.titleEl = this.doc.createElement('div');
     this.titleEl.className = 'sem-scene-title';
     this.root.appendChild(this.titleEl);
+
+    this.capacityEl = this.doc.createElement('div');
+    this.capacityEl.className = 'sem-capacity';
+    this.root.appendChild(this.capacityEl);
+
+    this.groupLayer = this.doc.createElement('div');
+    this.groupLayer.className = 'sem-groups';
+    this.root.appendChild(this.groupLayer);
 
     this.svg = this.doc.createElementNS(SVG_NS, 'svg');
     this.svg.setAttribute('class', 'sem-edges');
@@ -135,7 +144,7 @@ export class SemanticRenderer {
 
   #measure() {
     const width = this.width || this.container.clientWidth || 1200;
-    const height = this.height || this.container.clientHeight || 680;
+    const height = this.fixedHeight || this.container.clientHeight || 680;
     this.width = width;
     this.height = height;
     return { width, height };
@@ -193,15 +202,50 @@ export class SemanticRenderer {
     this.nodeLayer.style.display = nodes.length ? '' : 'none';
     this.svg.style.display = layout.edges.length ? '' : 'none';
     this.svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
+    const families = layout.kind || scene.family || '';
+    this.capacityEl.textContent = layout.capacity && layout.capacity.exceeded ? '内容超出单场景容量，将按观点续接（未丢弃）' : '';
+    this.capacityEl.style.display = layout.capacity && layout.capacity.exceeded ? '' : 'none';
 
     const focus = new Set(scene.focus_ids || []);
+    const targets = new Set(layout.targets || []);
     const doAnimate = Boolean(animate) && !this.reducedMotion;
-    this.#reconcileNodes(layout.nodes, nodeById, focus, doAnimate);
+    this.#reconcileGroups(layout.groups || [], doAnimate);
+    this.#reconcileNodes(layout.nodes, nodeById, focus, targets, doAnimate);
     this.#reconcileEdges(layout.edges, edgeById, doAnimate);
+    this.root.dataset.kind = families;
     return this.snapshot();
   }
 
-  #reconcileNodes(placed, nodeById, focus, doAnimate) {
+  #reconcileGroups(groups, doAnimate) {
+    const keep = new Set();
+    for (const group of groups) {
+      keep.add(group.id);
+      let rec = this.groupEls.get(group.id);
+      if (!rec) {
+        const el = this.doc.createElement('div');
+        el.className = 'sem-group';
+        el.dataset.semId = group.id;
+        const label = this.doc.createElement('span');
+        label.className = 'sem-group-label';
+        el.appendChild(label);
+        this.groupLayer.appendChild(el);
+        rec = { el, label };
+        this.groupEls.set(group.id, rec);
+        if (doAnimate) el.classList.add('sem-enter');
+      }
+      rec.el.style.transform = `translate3d(${Math.round(group.x)}px, ${Math.round(group.y)}px, 0)`;
+      rec.el.style.width = `${Math.round(group.width)}px`;
+      rec.el.style.height = `${Math.round(group.height)}px`;
+      if (rec.label.textContent !== (group.label || '')) rec.label.textContent = group.label || '';
+    }
+    for (const [id, rec] of [...this.groupEls]) {
+      if (keep.has(id)) continue;
+      this.groupEls.delete(id);
+      if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+    }
+  }
+
+  #reconcileNodes(placed, nodeById, focus, targets, doAnimate) {
     const keep = new Set();
     for (const spot of placed) {
       keep.add(spot.id);
@@ -211,7 +255,7 @@ export class SemanticRenderer {
         rec = this.#createNode(spot.id, doAnimate);
         this.nodeEls.set(spot.id, rec);
       }
-      this.#updateNode(rec, spot, model, focus.has(spot.id), doAnimate);
+      this.#updateNode(rec, spot, model, focus.has(spot.id), targets.has(spot.id), doAnimate);
     }
     for (const [id, rec] of [...this.nodeEls]) {
       if (keep.has(id)) continue;
@@ -247,7 +291,7 @@ export class SemanticRenderer {
     return rec;
   }
 
-  #updateNode(rec, spot, model, focused, doAnimate) {
+  #updateNode(rec, spot, model, focused, isTarget, doAnimate) {
     if (rec.el.classList.contains('is-exiting')) {
       rec.el.classList.remove('is-exiting');
       if (rec.timer != null) this.#cancelLater(rec.timer);
@@ -271,11 +315,12 @@ export class SemanticRenderer {
     rec.el.dataset.state = text(model.state);
     rec.el.dataset.role = text(model.role);
     rec.el.classList.toggle('is-focus', focused);
+    rec.el.classList.toggle('is-target', isTarget);
     rec.el.classList.toggle('is-tentative', model.state === 'tentative');
     rec.el.classList.toggle('is-stale', model.state === 'stale');
     rec.el.style.transform = `translate3d(${Math.round(spot.x)}px, ${Math.round(spot.y)}px, 0)`;
     rec.el.style.width = `${Math.round(spot.width)}px`;
-    rec.el.style.minHeight = `${Math.round(spot.height)}px`;
+    rec.el.style.height = `${Math.round(spot.height)}px`;
   }
 
   #reconcileEdges(placed, edgeById, doAnimate) {
@@ -332,7 +377,9 @@ export class SemanticRenderer {
       if (doAnimate) rec.path.classList.add('sem-draw');
     }
     if (rec.path.getAttribute('d') !== spot.path) rec.path.setAttribute('d', spot.path);
-    const word = relationWord(model.relation, model.label);
+    const marker = spot.arrow === false ? '' : `url(#${this.markerId})`;
+    if (rec.path.getAttribute('marker-end') !== marker) rec.path.setAttribute('marker-end', marker);
+    const word = spot.labelText !== undefined ? spot.labelText : relationWord(model.relation, model.label);
     if (rec.label.textContent !== word) rec.label.textContent = word;
     const x = Number.isFinite(spot.lx) ? spot.lx : spot.cx;
     const y = Number.isFinite(spot.ly) ? spot.ly : (spot.y1 + spot.y2) / 2 - 8;
@@ -341,6 +388,7 @@ export class SemanticRenderer {
     rec.g.dataset.relation = text(model.relation);
     rec.g.dataset.state = text(model.state);
     rec.g.dataset.dir = spot.dir;
+    rec.g.classList.toggle('is-compare', spot.dir === 'compare');
     rec.g.classList.toggle('is-tentative', model.state === 'tentative' || model.claim_kind === 'hypothesis');
     rec.g.classList.toggle('is-stale', model.state === 'stale');
   }
@@ -362,6 +410,10 @@ export class SemanticRenderer {
   }
 
   #clearAll({ immediate = true } = {}) {
+    for (const [id, rec] of this.groupEls) {
+      if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+      this.groupEls.delete(id);
+    }
     for (const [id, rec] of this.nodeEls) this.#removeElement(id, rec, 'node', false);
     for (const [id, rec] of this.edgeEls) this.#removeElement(id, rec, 'edge', false);
     for (const [, entry] of this.exiting) {
@@ -388,13 +440,15 @@ export class SemanticRenderer {
       height: layout.height,
       nodes: (layout.nodes || []).map((n) => ({ id: n.id, x: n.x, y: n.y, width: n.width, height: n.height, text: this.nodeEls.get(n.id)?.label.textContent || '' })),
       edges: (layout.edges || []).map((e) => ({ id: e.id, d: e.path, relation: e.relation, dir: e.dir })),
-      dom: { nodes: this.nodeEls.size, edges: this.edgeEls.size },
+      groups: (layout.groups || []).map((g) => ({ id: g.id, x: g.x, y: g.y, width: g.width, height: g.height })),
+      capacity: layout.capacity || null,
+      dom: { nodes: this.nodeEls.size, edges: this.edgeEls.size, groups: this.groupEls.size },
     };
   }
 
   /** Test/browser-check hook: identity map of live elements. */
   elements() {
-    return { nodes: this.nodeEls, edges: this.edgeEls, root: this.root };
+    return { nodes: this.nodeEls, edges: this.edgeEls, groups: this.groupEls, root: this.root };
   }
 
   destroy() {

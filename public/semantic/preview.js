@@ -124,6 +124,84 @@ const STEPS = [
     },
   },
   {
+    label: '切到组成场景：一次查找包含三件事',
+    apply(state) {
+      for (const id of Object.keys(state.scenes)) state.scenes[id].status = 'archived';
+      state.scenes.s3 = {
+        id: 's3',
+        title: '一次查找的组成',
+        family: 'composition',
+        status: 'active',
+        focus_ids: ['c1'],
+        node_ids: ['c0', 'c1', 'c2', 'c3'],
+        edge_ids: ['f1', 'f2', 'f3'],
+      };
+      state.nodes.c0 = { id: 'c0', label: '一次完整查找', claim_kind: 'assertion', state: 'supported', role: 'whole', created_at: 10 };
+      state.nodes.c1 = { id: 'c1', label: '打开微信找资料', claim_kind: 'assertion', state: 'supported', role: 'part', created_at: 11 };
+      state.nodes.c2 = { id: 'c2', label: '打开文档找资料', claim_kind: 'assertion', state: 'supported', role: 'part', created_at: 12 };
+      state.nodes.c3 = { id: 'c3', label: '打开表格找资料', claim_kind: 'assertion', state: 'supported', role: 'part', created_at: 13 };
+      state.edges.f1 = { id: 'f1', from: 'c1', to: 'c0', relation: 'part_of', label: '', state: 'supported' };
+      state.edges.f2 = { id: 'f2', from: 'c2', to: 'c0', relation: 'part_of', label: '', state: 'supported' };
+      state.edges.f3 = { id: 'f3', from: 'c3', to: 'c0', relation: 'part_of', label: '', state: 'supported' };
+      state.active_scene_id = 's3';
+    },
+  },
+  {
+    label: '组成继续补充：第五层加入，旧层不消失',
+    apply(state) {
+      const scene = state.scenes.s3;
+      state.nodes.c4 = { id: 'c4', label: '打开邮件找资料', claim_kind: 'assertion', state: 'supported', role: 'part', created_at: 14 };
+      state.nodes.c5 = { id: 'c5', label: '找不到时再回微信', claim_kind: 'assertion', state: 'supported', role: 'part', created_at: 15 };
+      state.edges.f4 = { id: 'f4', from: 'c4', to: 'c0', relation: 'part_of', label: '', state: 'supported' };
+      state.edges.f5 = { id: 'f5', from: 'c5', to: 'c0', relation: 'part_of', label: '', state: 'supported' };
+      scene.node_ids.push('c4', 'c5');
+      scene.edge_ids.push('f4', 'f5');
+    },
+  },
+  {
+    label: '切到汇聚场景：三处资料汇入统一入口',
+    apply(state) {
+      for (const id of Object.keys(state.scenes)) state.scenes[id].status = 'archived';
+      state.scenes.s4 = {
+        id: 's4',
+        title: '多处资料汇入统一入口',
+        family: 'convergence',
+        status: 'active',
+        focus_ids: ['g3'],
+        node_ids: ['g1', 'g2', 'g3', 'g4'],
+        edge_ids: ['h1', 'h2', 'h3'],
+      };
+      state.nodes.g1 = { id: 'g1', label: '微信里的资料', claim_kind: 'assertion', state: 'supported', role: 'source', created_at: 20 };
+      state.nodes.g2 = { id: 'g2', label: '文档里的资料', claim_kind: 'assertion', state: 'supported', role: 'source', created_at: 21 };
+      state.nodes.g3 = { id: 'g3', label: '表格里的资料', claim_kind: 'assertion', state: 'supported', role: 'source', created_at: 22 };
+      state.nodes.g4 = { id: 'g4', label: '统一入口', claim_kind: 'proposal', state: 'tentative', role: 'target', created_at: 23 };
+      state.edges.h1 = { id: 'h1', from: 'g1', to: 'g4', relation: 'converges_to', label: '', state: 'supported' };
+      state.edges.h2 = { id: 'h2', from: 'g2', to: 'g4', relation: 'converges_to', label: '', state: 'supported' };
+      state.edges.h3 = { id: 'h3', from: 'g3', to: 'g4', relation: 'converges_to', label: '', state: 'tentative' };
+      state.active_scene_id = 's4';
+    },
+  },
+  {
+    label: '中性场景：问题与设想，不画成已确认因果',
+    apply(state) {
+      for (const id of Object.keys(state.scenes)) state.scenes[id].status = 'archived';
+      state.scenes.s5 = {
+        id: 's5',
+        title: '价格会不会是原因',
+        family: 'text',
+        status: 'active',
+        focus_ids: ['q1', 'q2'],
+        node_ids: ['q1', 'q2', 'q3'],
+        edge_ids: ['k1'],
+      };
+      state.nodes.q1 = { id: 'q1', label: '会不会是价格太高？', claim_kind: 'question', state: 'tentative', role: 'question', created_at: 30 };
+      state.nodes.q2 = { id: 'q2', label: '也许新用户找不到入口', claim_kind: 'hypothesis', state: 'tentative', role: 'cause', created_at: 31 };
+      state.nodes.q3 = { id: 'q3', label: '先记下，等更多说法', claim_kind: 'assertion', state: 'supported', role: 'note', created_at: 32 };
+      state.edges.k1 = { id: 'k1', from: 'q1', to: 'q2', relation: 'conditional', label: '若', state: 'tentative' };
+      state.active_scene_id = 's5';
+    },
+  },
+  {
     label: '减少动态效果：语义不变，运动关闭',
     apply() {},
     reducedMotion: true,
@@ -151,6 +229,7 @@ function renderStep(stepIndex, { animate = true } = {}) {
   const step = STEPS[stepIndex - 1];
   step.apply(next);
   if (step.reducedMotion) reduced = true;
+  renderer.setReducedMotion(reduced);
 
   const before = new Map([...renderer.elements().nodes].map(([id, rec]) => [id, rec.el]));
   const beforeEdges = new Map([...renderer.elements().edges].map(([id, rec]) => [id, rec.g]));
@@ -176,7 +255,7 @@ function renderStep(stepIndex, { animate = true } = {}) {
   while (statsEl.firstChild) statsEl.removeChild(statsEl.firstChild);
   const lines = [
     `场景：${snap.title || '—'}（${snap.family || 'text'}）`,
-    `节点 ${snap.dom.nodes} · 边 ${snap.dom.edges}`,
+    `节点 ${snap.dom.nodes} · 边 ${snap.dom.edges}${snap.dom.groups ? ` · 容器 ${snap.dom.groups}` : ''}`,
     `身份保持 ${identityKept} 次 · 新建 ${identityCreated} 次`,
     `减少动态：${reduced ? '开' : '关'}`,
   ];

@@ -241,3 +241,52 @@
   .sem-node-label { font-size: 16px; }
   .sem-scene-title { font-size: 19px; }
 }
+
+/* Family-specific layers (S07) */
+.sem-groups {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.sem-group {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 18px;
+  border: 1px dashed rgba(190, 224, 120, 0.42);
+  background: rgba(190, 224, 120, 0.045);
+  box-sizing: border-box;
+}
+.sem-group-label {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  padding: 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(214, 233, 176, 0.85);
+  background: #06170f;
+}
+.sem-capacity {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 210, 120, 0.4);
+  font-size: 11px;
+  color: rgba(247, 226, 168, 0.92);
+  background: rgba(44, 36, 12, 0.72);
+}
+.sem-node.is-target {
+  border-color: rgba(96, 224, 148, 0.8);
+  box-shadow: 0 0 0 1px rgba(96, 224, 148, 0.35), 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.sem-edge[data-dir='compare'] .sem-edge-line {
+  stroke: rgba(170, 190, 205, 0.55);
+  stroke-dasharray: 6 8;
+  marker-end: none;
+}
+.sem-edge[data-dir='converge'] .sem-edge-line { stroke: rgba(120, 214, 235, 0.78); }
+.sem-edge[data-dir='part'] .sem-edge-line { stroke: rgba(190, 224, 120, 0.62); }

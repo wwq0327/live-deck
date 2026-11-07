@@ -78,7 +78,7 @@ test('text layout keeps a single readable column', () => {
   assert.ok(layout.nodes[0].y < layout.nodes[1].y);
 });
 
-test('stacked compare cards get a side label and a short connector', () => {
+test('compare pairs sit side by side around a shared dashed axis', () => {
   const nodes = [node('a', '统一入口', { created_at: 1 }), node('b', '维持现状', { created_at: 2 })];
   const edges = [edge('ab', 'a', 'b', { relation: 'contrasts' })];
   const layout = layoutScene({
@@ -89,10 +89,146 @@ test('stacked compare cards get a side label and a short connector', () => {
     height: 680,
   });
   const [placed] = layout.edges;
-  assert.equal(placed.dir, 'vertical');
-  const right = Math.max(...layout.nodes.map((n) => n.x + n.width));
-  assert.ok(placed.lx > right);
-  assert.ok(placed.ly > Math.min(...layout.nodes.map((n) => n.y)));
+  const byId = new Map(layout.nodes.map((n) => [n.id, n]));
+  assert.equal(placed.dir, 'compare');
+  assert.equal(placed.labelText, '对比');
+  assert.ok(byId.get('a').x < byId.get('b').x);
+  assert.ok(Math.abs(byId.get('a').y - byId.get('b').y) < 40);
+  assert.ok(placed.lx > byId.get('a').x + byId.get('a').width);
+  assert.ok(placed.lx < byId.get('b').x);
+});
+
+test('composition stacks parts inside one container', () => {
+  const nodes = [
+    node('w', '一次查找', { created_at: 1 }),
+    node('p1', '打开微信', { created_at: 2 }),
+    node('p2', '打开文档', { created_at: 3 }),
+    node('p3', '打开表格', { created_at: 4 }),
+  ];
+  const edges = [
+    edge('e1', 'p1', 'w', { relation: 'part_of' }),
+    edge('e2', 'p2', 'w', { relation: 'part_of' }),
+    edge('e3', 'p3', 'w', { relation: 'part_of' }),
+  ];
+  const layout = layoutScene({
+    scene: { id: 's', family: 'composition', node_ids: nodes.map((n) => n.id), edge_ids: edges.map((e) => e.id) },
+    nodes,
+    edges,
+    width: 1200,
+    height: 680,
+  });
+  assert.equal(layout.groups.length, 1);
+  const group = layout.groups[0];
+  for (const placed of layout.nodes) {
+    assert.ok(placed.x >= group.x && placed.x + placed.width <= group.x + group.width);
+    assert.ok(placed.y >= group.y && placed.y + placed.height <= group.y + group.height);
+  }
+  assert.equal(layout.edges.length, 3);
+  for (const e of layout.edges) assert.equal(e.labelText, '');
+});
+
+test('composition chain keeps every layer from one to five', () => {
+  for (let depth = 1; depth <= 5; depth += 1) {
+    const nodes = Array.from({ length: depth + 1 }, (_, i) => node(`n${i}`, `第${i + 1}层`, { created_at: i + 1 }));
+    const edges = Array.from({ length: depth }, (_, i) => edge(`e${i}`, `n${i}`, `n${i + 1}`, { relation: 'part_of' }));
+    const layout = layoutScene({
+      scene: { id: 's', family: 'composition', node_ids: nodes.map((n) => n.id), edge_ids: edges.map((e) => e.id) },
+      nodes,
+      edges,
+      width: 1200,
+      height: 680,
+    });
+    assert.equal(layout.nodes.length, depth + 1);
+    assert.equal(layout.edges.length, depth);
+    for (let i = 1; i < layout.nodes.length; i += 1) {
+      assert.ok(layout.nodes[i - 1].x < layout.nodes[i].x);
+    }
+  }
+});
+
+test('convergence fans sources into a target on the right', () => {
+  const nodes = [
+    node('t', '统一入口', { created_at: 1 }),
+    node('s1', '微信资料', { created_at: 2 }),
+    node('s2', '文档资料', { created_at: 3 }),
+    node('s3', '表格资料', { created_at: 4 }),
+  ];
+  const edges = [
+    edge('e1', 's1', 't', { relation: 'converges_to' }),
+    edge('e2', 's2', 't', { relation: 'converges_to' }),
+    edge('e3', 's3', 't', { relation: 'converges_to' }),
+  ];
+  const layout = layoutScene({
+    scene: { id: 's', family: 'convergence', node_ids: nodes.map((n) => n.id), edge_ids: edges.map((e) => e.id) },
+    nodes,
+    edges,
+    width: 1200,
+    height: 680,
+  });
+  const byId = new Map(layout.nodes.map((n) => [n.id, n]));
+  for (const id of ['s1', 's2', 's3']) assert.ok(byId.get(id).x < byId.get('t').x);
+  assert.deepEqual(layout.targets, ['t']);
+  for (const e of layout.edges) assert.equal(e.dir, 'converge');
+});
+
+test('composition container and members keep identity while parts are added', () => {
+  const { renderer } = setup();
+  const nodes = [
+    node('w', '一次查找', { created_at: 1 }),
+    node('p1', '打开微信', { created_at: 2 }),
+    node('p2', '打开文档', { created_at: 3 }),
+  ];
+  const edges = [edge('e1', 'p1', 'w', { relation: 'part_of' }), edge('e2', 'p2', 'w', { relation: 'part_of' })];
+  const state = baseState();
+  state.scenes.s1 = {
+    id: 's1',
+    title: '组成',
+    family: 'composition',
+    status: 'active',
+    focus_ids: [],
+    node_ids: ['w', 'p1', 'p2'],
+    edge_ids: ['e1', 'e2'],
+  };
+  state.nodes = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  state.edges = Object.fromEntries(edges.map((e) => [e.id, e]));
+  renderer.render(state);
+  const groupBefore = renderer.elements().groups.size ? [...renderer.elements().groups.values()][0].el : null;
+  assert.ok(groupBefore);
+  const nodeRefs = new Map([...renderer.elements().nodes].map(([id, rec]) => [id, rec.el]));
+
+  const next = JSON.parse(JSON.stringify(state));
+  next.nodes.p3 = node('p3', '打开表格', { created_at: 4 });
+  next.edges.e3 = edge('e3', 'p3', 'w', { relation: 'part_of' });
+  next.scenes.s1.node_ids.push('p3');
+  next.scenes.s1.edge_ids.push('e3');
+  renderer.render(next);
+  const groupAfter = [...renderer.elements().groups.values()][0].el;
+  assert.equal(groupAfter, groupBefore);
+  assert.equal(renderer.elements().nodes.get('p1').el, nodeRefs.get('p1'));
+  assert.equal(renderer.elements().nodes.get('p3').el.dataset.born ?? '', '');
+});
+
+test('over capacity reports continuation without dropping nodes', () => {
+  const nodes = Array.from({ length: 7 }, (_, i) => node(`n${i}`, `观点${i + 1}`, { created_at: i + 1 }));
+  const edges = nodes.slice(1).map((n, i) => edge(`e${i}`, `n${i}`, `n${i + 1}`));
+  const layout = layoutScene({
+    scene: { id: 's', family: 'cause', node_ids: nodes.map((n) => n.id), edge_ids: edges.map((e) => e.id) },
+    nodes,
+    edges,
+    width: 1200,
+    height: 680,
+  });
+  assert.equal(layout.capacity.exceeded, true);
+  assert.equal(layout.nodes.length, 7);
+  const { renderer } = setup();
+  const state = baseState();
+  state.scenes.s1.node_ids = nodes.map((n) => n.id);
+  state.scenes.s1.edge_ids = edges.map((e) => e.id);
+  state.nodes = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  state.edges = Object.fromEntries(edges.map((e) => [e.id, e]));
+  renderer.render(state);
+  assert.equal(renderer.elements().nodes.size, 7);
+  assert.match(renderer.capacityEl.textContent, /续接/);
 });
 
 test('edges that skip a rank dip outside the columns', () => {
