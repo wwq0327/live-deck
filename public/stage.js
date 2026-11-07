@@ -528,10 +528,10 @@ async function commit(text, t0, snapshot) {
     provisional(text);
     if (state.live) snapshot = state.live;
   }
-  await decide(t0, snapshot, undefined, text);
+  await decide(t0, snapshot, undefined, text, state.transcript);
 }
 
-async function decide(startedAt, snapshot, expectedEpoch, textOverride) {
+async function decide(startedAt, snapshot, expectedEpoch, textOverride, transcriptOverride) {
   if (expectedEpoch !== undefined && expectedEpoch !== epoch) return;
   const myEpoch = epoch;
   state.busy = true;
@@ -539,7 +539,7 @@ async function decide(startedAt, snapshot, expectedEpoch, textOverride) {
   liveLabel.textContent = '思考';
   const t0 = startedAt || performance.now();
   try {
-    const seed = lastSentence(textOverride || state.transcript);
+    const seed = lastSentence(textOverride || transcriptOverride || state.transcript);
     const live = snapshot !== undefined ? snapshot : state.live;
     // 旧句子的 final 不能写到已经开始的下一句页上。
     if (live && live.slide?.pageId && state.current?.pageId !== live.slide.pageId) {
@@ -548,7 +548,7 @@ async function decide(startedAt, snapshot, expectedEpoch, textOverride) {
     }
     const cur = live && live.local ? { ...(live.slide || {}), provisional: true } : undefined;
     let streamed = false;
-    const res = await askDirect('decide', textOverride, undefined, cur, (ev) => {
+    const res = await askDirect('decide', transcriptOverride || state.transcript, undefined, cur, (ev) => {
       if (myEpoch !== epoch || !ev.title) return;
       // 只有已经绑定到这一句的活页才接受流式标题；没有活页时不能
       // 把新句子的半个标题写到上一页上（排队句尤其明显）。
@@ -642,7 +642,7 @@ async function decide(startedAt, snapshot, expectedEpoch, textOverride) {
       if (state.pending.length) {
         const p = state.pending.shift();
         // 排队句按“新起一页”处理，不能拿上一句的活页快照去 morph 当前页。
-        await decide(p.t0, null, myEpoch, p.text);
+        await decide(p.t0, null, myEpoch, p.text, p.transcript);
       } else {
         speculate();
       }
