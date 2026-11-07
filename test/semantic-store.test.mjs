@@ -432,3 +432,59 @@ test('场景容量提示但不静默删除节点；回看激活会归档上一�
   assert.equal(store.activeScene().id, makeId('scene', 'r2', 1));
   assert.equal(store.recentScenes().length, 1);
 });
+
+test('人工修正归档场景：当前场景不变，只递增一次版本并标 manual', () => {
+  const { ledger, store } = makeEnv();
+  const [s1, s2] = seedSegments(ledger, ['用户流失是因为操作太复杂', '先换界面，后来用户增长了，但还不确定关系']);
+  const r1 = buildRequest(store, ledger, 'r1');
+  const sceneA = makeId('scene', 'r1', 1);
+  const nodeA = makeId('node', 'r1', 2);
+  respond(store, ledger, r1, [
+    scene('r1', 1, '流失原因'),
+    node('r1', 2, sceneA, '操作太复杂', [evidence(s1, '操作太复杂')]),
+  ]);
+  const r2 = buildRequest(store, ledger, 'r2');
+  const sceneB = makeId('scene', 'r2', 1);
+  respond(store, ledger, r2, [
+    scene('r2', 1, '先后与不确定'),
+    node('r2', 2, sceneB, '换了界面', [evidence(s2, '先换界面')]),
+    node('r2', 3, sceneB, '用户增长', [evidence(s2, '用户增长了')]),
+  ]);
+  assert.equal(store.activeScene().id, sceneB);
+  const before = store.graphVersion;
+
+  const out = store.applyManual([{ op: 'upsert_node', node: { id: nodeA, label: '新用户找不到入口' } }]);
+  assert.equal(out.ok, true, JSON.stringify(out.errors));
+  assert.equal(store.snapshot().nodes[nodeA].label, '新用户找不到入口');
+  assert.equal(store.snapshot().nodes[nodeA].manual, true);
+  assert.equal(store.graphVersion, before + 1);
+  assert.equal(store.activeScene().id, sceneB, 'correcting an archived scene must not switch the active scene');
+  assert.equal(store.snapshot().scenes[sceneA].status, 'archived');
+  assert.equal(store.snapshot().scenes[sceneB].status, 'active');
+  const view = store.graphView();
+  assert.equal(view.nodes.find((n) => n.id === nodeA).manual, true);
+  assert.equal(view.nodes.find((n) => n.id === nodeA).label, '新用户找不到入口');
+});
+
+test('人工撤回节点会级联撤回边，且整批只递增一次版本', () => {
+  const { ledger, store } = makeEnv();
+  const [s1] = seedSegments(ledger, ['资料分散所以来回切换']);
+  const r1 = buildRequest(store, ledger, 'r1');
+  const sceneA = makeId('scene', 'r1', 1);
+  const a = makeId('node', 'r1', 2);
+  const b = makeId('node', 'r1', 3);
+  const e = makeId('edge', 'r1', 4);
+  const ev = [evidence(s1, '资料分散')];
+  respond(store, ledger, r1, [
+    scene('r1', 1, '因果'),
+    node('r1', 2, sceneA, '资料分散', ev),
+    node('r1', 3, sceneA, '来回切换', ev),
+    edge('r1', 4, sceneA, a, b, 'causes', ev),
+  ]);
+  const before = store.graphVersion;
+  const out = store.applyManual([{ op: 'retract', id: a }]);
+  assert.equal(out.ok, true, JSON.stringify(out.errors));
+  assert.equal(store.snapshot().nodes[a].state, 'retracted');
+  assert.equal(store.snapshot().edges[e].state, 'retracted');
+  assert.equal(store.graphVersion, before + 1);
+});

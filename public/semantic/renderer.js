@@ -269,6 +269,8 @@ export class SemanticRenderer {
     el.className = 'sem-node';
     el.dataset.semId = id;
     el.setAttribute('data-sem-id', id);
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
     const kind = this.doc.createElement('span');
     kind.className = 'sem-node-kind';
     const label = this.doc.createElement('span');
@@ -307,13 +309,20 @@ export class SemanticRenderer {
     }
     const label = text(model.label);
     if (rec.label.textContent !== label) rec.label.textContent = label;
-    const flag = [CLAIM_FLAGS[model.claim_kind] || '', model.state === 'tentative' ? '待确认' : '', model.state === 'stale' ? '待复核' : '']
+    const flag = [
+      CLAIM_FLAGS[model.claim_kind] || '',
+      model.state === 'tentative' ? '待确认' : '',
+      model.state === 'stale' ? '待复核' : '',
+      model.manual ? '人工' : '',
+    ]
       .filter(Boolean)
       .join(' · ');
     if (rec.flag.textContent !== flag) rec.flag.textContent = flag;
+    rec.el.setAttribute('aria-label', `${label}${flag ? `，${flag}` : ''}；回车可更正`);
     rec.el.dataset.claimKind = text(model.claim_kind);
     rec.el.dataset.state = text(model.state);
     rec.el.dataset.role = text(model.role);
+    rec.el.dataset.manual = model.manual ? 'true' : 'false';
     rec.el.classList.toggle('is-focus', focused);
     rec.el.classList.toggle('is-target', isTarget);
     rec.el.classList.toggle('is-tentative', model.state === 'tentative');
@@ -346,6 +355,8 @@ export class SemanticRenderer {
     const g = this.doc.createElementNS(SVG_NS, 'g');
     g.setAttribute('class', 'sem-edge');
     g.setAttribute('data-sem-id', id);
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
     g.dataset.semId = id;
     const path = this.doc.createElementNS(SVG_NS, 'path');
     path.setAttribute('class', 'sem-edge-line');
@@ -388,6 +399,8 @@ export class SemanticRenderer {
     rec.g.dataset.relation = text(model.relation);
     rec.g.dataset.state = text(model.state);
     rec.g.dataset.dir = spot.dir;
+    rec.g.dataset.manual = model.manual ? 'true' : 'false';
+    rec.g.setAttribute('aria-label', `${word || '关系'}；回车可更正`);
     rec.g.classList.toggle('is-compare', spot.dir === 'compare');
     rec.g.classList.toggle('is-tentative', model.state === 'tentative' || model.claim_kind === 'hypothesis');
     rec.g.classList.toggle('is-stale', model.state === 'stale');

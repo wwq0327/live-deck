@@ -374,3 +374,25 @@ test('hypothesis and tentative markers reach the flag and edge state', () => {
   assert.equal(renderer.elements().nodes.get('n1').flag.textContent, '设想 · 待确认');
   assert.equal(renderer.elements().edges.get('e1').g.classList.contains('is-tentative'), true);
 });
+
+test('节点与边可键盘聚焦，人工标记写入 ARIA 与 data 属性', () => {
+  const { renderer, container } = setup();
+  const state = baseState();
+  state.nodes.n2 = node('n2', '人工改过的标签', { manual: true, claim_kind: 'hypothesis', state: 'tentative' });
+  state.edges.e1 = edge('e1', 'n1', 'n2', { manual: true });
+  renderer.render(state, { animate: false });
+  const nodeEl = renderer.elements().nodes.get('n2').el;
+  assert.equal(nodeEl.tabIndex, 0);
+  assert.equal(nodeEl.getAttribute('role'), 'button');
+  assert.match(nodeEl.getAttribute('aria-label'), /人工改过的标签/);
+  assert.match(nodeEl.getAttribute('aria-label'), /设想/);
+  assert.match(nodeEl.getAttribute('aria-label'), /人工/);
+  assert.equal(nodeEl.dataset.manual, 'true');
+  assert.match(renderer.elements().nodes.get('n2').flag.textContent, /人工/);
+  const edgeEl = renderer.elements().edges.get('e1').g;
+  assert.equal(edgeEl.getAttribute('tabindex'), '0');
+  assert.equal(edgeEl.getAttribute('role'), 'button');
+  assert.match(edgeEl.getAttribute('aria-label'), /可更正/);
+  assert.equal(edgeEl.dataset.manual, 'true');
+  assert.ok(container.children.length >= 1);
+});

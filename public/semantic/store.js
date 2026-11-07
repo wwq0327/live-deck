@@ -763,6 +763,7 @@ export class SemanticStore {
         label: n.label,
         claim_kind: n.claim_kind,
         state: n.state,
+        manual: Boolean(n.manual),
       })),
       edges: Object.values(this.state.edges).map((e) => ({
         id: e.id,
@@ -773,6 +774,7 @@ export class SemanticStore {
         label: e.label,
         claim_kind: e.claim_kind,
         state: e.state,
+        manual: Boolean(e.manual),
       })),
       unresolved: clone(this.state.unresolved),
     };

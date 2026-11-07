@@ -72,7 +72,7 @@ test('成功响应包装请求版本字段，并记录 tokens', async () => {
 
   const sent = calls[0].body;
   assert.equal(sent.model, 'deepseek-flash');
-  assert.equal(sent.max_tokens, 900);
+  assert.equal(sent.max_tokens, 1400);
   assert.deepEqual(sent.response_format, { type: 'json_object' });
   assert.deepEqual(sent.thinking, { type: 'disabled' });
   assert.equal(sent.stream, false);
