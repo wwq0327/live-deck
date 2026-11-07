@@ -1,0 +1,4133 @@
+{
+  "at": "2026-11-07T02:03:40.584Z",
+  "reps": 5,
+  "duration_ms": 113926,
+  "model": "deepseek-flash",
+  "samples": 40,
+  "ok": 40,
+  "degraded": 0,
+  "relation_recall": 1,
+  "relation_precision": 1,
+  "unclassified_edges": [],
+  "required_relations": 20,
+  "matched_relations": 20,
+  "core_coverage": 1,
+  "severe_violations": 0,
+  "violations": [],
+  "latency_ms": {
+    "min": 1838,
+    "p50": 2580,
+    "p95": 4084,
+    "max": 4321
+  },
+  "usage": {
+    "prompt": 56680,
+    "completion": 24631,
+    "cached": 48369
+  },
+  "runs": [
+    {
+      "case": "C01",
+      "rep": 1,
+      "request_id": "c01r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2647,
+      "usage": {
+        "prompt_tokens": 1409,
+        "completion_tokens": 587,
+        "total_tokens": 1996,
+        "prompt_tokens_details": {
+          "cached_tokens": 1275
+        },
+        "prompt_cache_hit_tokens": 1275,
+        "prompt_cache_miss_tokens": 134
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 7,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c01r1_1",
+            "title": "资料分散导致切换与耗时",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "资料分散在微信、文档、表格",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "找东西时来回切换",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "切换花更多时间",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "资料分散在微信、文档、表格",
+            "to": "找东西时来回切换",
+            "relation": "causes",
+            "label": "所以",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "找东西时来回切换",
+            "to": "切换花更多时间",
+            "relation": "causes",
+            "label": "让我花更多时间",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": []
+      },
+      "score": {
+        "required": 2,
+        "matched": 2,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(分散|微信|文档|表格)/",
+            "pass": true
+          },
+          {
+            "re": "/切换/",
+            "pass": true
+          },
+          {
+            "re": "/(时间|耗时|花更多)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C01",
+      "rep": 2,
+      "request_id": "c01r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2505,
+      "usage": {
+        "prompt_tokens": 1409,
+        "completion_tokens": 575,
+        "total_tokens": 1984,
+        "prompt_tokens_details": {
+          "cached_tokens": 1275
+        },
+        "prompt_cache_hit_tokens": 1275,
+        "prompt_cache_miss_tokens": 134
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 7,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c01r2_1",
+            "title": "资料分散导致切换与耗时",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "资料分散在微信、文档、表格",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "找东西时来回切换",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "花更多时间",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "资料分散在微信、文档、表格",
+            "to": "找东西时来回切换",
+            "relation": "causes",
+            "label": "所以",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "找东西时来回切换",
+            "to": "花更多时间",
+            "relation": "causes",
+            "label": "让我",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": []
+      },
+      "score": {
+        "required": 2,
+        "matched": 2,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(分散|微信|文档|表格)/",
+            "pass": true
+          },
+          {
+            "re": "/切换/",
+            "pass": true
+          },
+          {
+            "re": "/(时间|耗时|花更多)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C01",
+      "rep": 3,
+      "request_id": "c01r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2578,
+      "usage": {
+        "prompt_tokens": 1409,
+        "completion_tokens": 587,
+        "total_tokens": 1996,
+        "prompt_tokens_details": {
+          "cached_tokens": 1275
+        },
+        "prompt_cache_hit_tokens": 1275,
+        "prompt_cache_miss_tokens": 134
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 7,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c01r3_1",
+            "title": "资料分散导致切换与耗时",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "资料分散在微信、文档、表格",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "找东西时来回切换",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "切换花更多时间",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "资料分散在微信、文档、表格",
+            "to": "找东西时来回切换",
+            "relation": "causes",
+            "label": "所以",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "找东西时来回切换",
+            "to": "切换花更多时间",
+            "relation": "causes",
+            "label": "让我花更多时间",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": []
+      },
+      "score": {
+        "required": 2,
+        "matched": 2,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(分散|微信|文档|表格)/",
+            "pass": true
+          },
+          {
+            "re": "/切换/",
+            "pass": true
+          },
+          {
+            "re": "/(时间|耗时|花更多)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C01",
+      "rep": 4,
+      "request_id": "c01r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2713,
+      "usage": {
+        "prompt_tokens": 1409,
+        "completion_tokens": 576,
+        "total_tokens": 1985,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 257
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 7,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c01r4_1",
+            "title": "资料分散导致切换与耗时",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "资料分散在微信、文档、表格",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "找东西时来回切换",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "切换花更多时间",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "资料分散在微信、文档、表格",
+            "to": "找东西时来回切换",
+            "relation": "causes",
+            "label": "所以",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "找东西时来回切换",
+            "to": "切换花更多时间",
+            "relation": "causes",
+            "label": "让我",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": []
+      },
+      "score": {
+        "required": 2,
+        "matched": 2,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(分散|微信|文档|表格)/",
+            "pass": true
+          },
+          {
+            "re": "/切换/",
+            "pass": true
+          },
+          {
+            "re": "/(时间|耗时|花更多)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C01",
+      "rep": 5,
+      "request_id": "c01r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2608,
+      "usage": {
+        "prompt_tokens": 1409,
+        "completion_tokens": 584,
+        "total_tokens": 1993,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 257
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 7,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c01r5_1",
+            "title": "资料分散导致切换与耗时",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "资料分散在微信、文档、表格",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "找东西时来回切换",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "切换花更多时间",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "资料分散在微信、文档、表格",
+            "to": "找东西时来回切换",
+            "relation": "causes",
+            "label": "所以",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "找东西时来回切换",
+            "to": "切换花更多时间",
+            "relation": "causes",
+            "label": "让我",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": []
+      },
+      "score": {
+        "required": 2,
+        "matched": 2,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(分散|微信|文档|表格)/",
+            "pass": true
+          },
+          {
+            "re": "/切换/",
+            "pass": true
+          },
+          {
+            "re": "/(时间|耗时|花更多)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C02",
+      "rep": 1,
+      "request_id": "c02r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2072,
+      "usage": {
+        "prompt_tokens": 1391,
+        "completion_tokens": 415,
+        "total_tokens": 1806,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 239
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 4,
+      "scenes": 1,
+      "nodes": 2,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c02r1_1",
+            "title": "办法与切换的关系",
+            "family": "text",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "这个办法",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "这个办法",
+            "to": "减少切换",
+            "relation": "contrasts",
+            "label": "不能减少",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "“这个办法”具体指什么，前文未给出",
+          "“切换”指什么切换，未说明"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 1,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "这个办法 -contrasts-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(办法|方法)/",
+            "pass": true
+          },
+          {
+            "re": "/(不能|无法|不会|没有)/",
+            "pass": true
+          },
+          {
+            "re": "/减少切换|少切换/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C02",
+      "rep": 2,
+      "request_id": "c02r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 1931,
+      "usage": {
+        "prompt_tokens": 1391,
+        "completion_tokens": 414,
+        "total_tokens": 1805,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 239
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 4,
+      "scenes": 1,
+      "nodes": 2,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c02r2_1",
+            "title": "办法与切换",
+            "family": "text",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "这个办法",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "这个办法",
+            "to": "减少切换",
+            "relation": "contrasts",
+            "label": "不能减少",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "「这个办法」具体指什么，前文未给出",
+          "「切换」指什么切换，未说明"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 1,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "这个办法 -contrasts-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(办法|方法)/",
+            "pass": true
+          },
+          {
+            "re": "/(不能|无法|不会|没有)/",
+            "pass": true
+          },
+          {
+            "re": "/减少切换|少切换/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C02",
+      "rep": 3,
+      "request_id": "c02r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2350,
+      "usage": {
+        "prompt_tokens": 1391,
+        "completion_tokens": 414,
+        "total_tokens": 1805,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 239
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 4,
+      "scenes": 1,
+      "nodes": 2,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c02r3_1",
+            "title": "办法与切换",
+            "family": "text",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "这个办法",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "这个办法",
+            "to": "减少切换",
+            "relation": "contrasts",
+            "label": "不能减少",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "「这个办法」具体指什么，前文未给出",
+          "「切换」指什么切换，未说明"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 1,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "这个办法 -contrasts-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(办法|方法)/",
+            "pass": true
+          },
+          {
+            "re": "/(不能|无法|不会|没有)/",
+            "pass": true
+          },
+          {
+            "re": "/减少切换|少切换/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C02",
+      "rep": 4,
+      "request_id": "c02r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2282,
+      "usage": {
+        "prompt_tokens": 1391,
+        "completion_tokens": 414,
+        "total_tokens": 1805,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 239
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 4,
+      "scenes": 1,
+      "nodes": 2,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c02r4_1",
+            "title": "办法与切换的关系",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "这个办法",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "这个办法",
+            "to": "减少切换",
+            "relation": "causes",
+            "label": "不能减少",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "「这个办法」具体指什么，前文未交代",
+          "「切换」指什么切换，未说明"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "这个办法 -causes-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(办法|方法)/",
+            "pass": true
+          },
+          {
+            "re": "/(不能|无法|不会|没有)/",
+            "pass": true
+          },
+          {
+            "re": "/减少切换|少切换/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C02",
+      "rep": 5,
+      "request_id": "c02r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 1838,
+      "usage": {
+        "prompt_tokens": 1391,
+        "completion_tokens": 415,
+        "total_tokens": 1806,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 239
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 4,
+      "scenes": 1,
+      "nodes": 2,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c02r5_1",
+            "title": "办法与切换的关系",
+            "family": "text",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "这个办法",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "这个办法",
+            "to": "减少切换",
+            "relation": "contrasts",
+            "label": "不能减少",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "「这个办法」具体指什么，前文未交代",
+          "「切换」指哪种切换，未说明"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 1,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "这个办法 -contrasts-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(办法|方法)/",
+            "pass": true
+          },
+          {
+            "re": "/(不能|无法|不会|没有)/",
+            "pass": true
+          },
+          {
+            "re": "/减少切换|少切换/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C03",
+      "rep": 1,
+      "request_id": "c03r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3121,
+      "usage": {
+        "prompt_tokens": 1466,
+        "completion_tokens": 756,
+        "total_tokens": 2222,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 186
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 8,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c03r1_1",
+            "title": "用户流失原因：入口难找",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "新用户找不到入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "老用户",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "新用户找不到入口",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "导致流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "老用户",
+            "to": "新用户找不到入口",
+            "relation": "contrasts",
+            "label": "不受此问题影响",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“操作太复杂”与“找不到入口”是同一问题的不同说法，还是两个独立原因，讲者未明确"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 1,
+        "extraEdges": [
+          "老用户 -contrasts-> 新用户找不到入口"
+        ],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "/(复杂|找不到入口)/",
+            "pass": true
+          },
+          {
+            "re": "/新用户/",
+            "pass": true
+          },
+          {
+            "re": "/老用户/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C03",
+      "rep": 2,
+      "request_id": "c03r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3870,
+      "usage": {
+        "prompt_tokens": 1466,
+        "completion_tokens": 877,
+        "total_tokens": 2343,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 186
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 9,
+      "scenes": 1,
+      "nodes": 4,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c03r2_1",
+            "title": "用户流失原因：入口难找",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "操作太复杂",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "新用户找不到入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "老用户",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "新用户找不到入口",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "导致流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "操作太复杂",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "原说法（被修正）",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "老用户",
+            "to": "新用户找不到入口",
+            "relation": "contrasts",
+            "label": "不受此问题影响",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“操作太复杂”是否仍成立，还是被“新用户找不到入口”完全取代，讲话者未明确"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 1,
+        "extraEdges": [
+          "老用户 -contrasts-> 新用户找不到入口"
+        ],
+        "tentativeEdges": [
+          "操作太复杂 -causes-> 用户流失"
+        ],
+        "coverage": [
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "/(复杂|找不到入口)/",
+            "pass": true
+          },
+          {
+            "re": "/新用户/",
+            "pass": true
+          },
+          {
+            "re": "/老用户/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C03",
+      "rep": 3,
+      "request_id": "c03r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3512,
+      "usage": {
+        "prompt_tokens": 1466,
+        "completion_tokens": 884,
+        "total_tokens": 2350,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 186
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 9,
+      "scenes": 1,
+      "nodes": 4,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c03r3_1",
+            "title": "用户流失原因：入口难找",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "操作太复杂",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "新用户找不到入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "老用户不受此问题影响",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "新用户找不到入口",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "导致流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "操作太复杂",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "原说法（被修正）",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "老用户不受此问题影响",
+            "to": "新用户找不到入口",
+            "relation": "contrasts",
+            "label": "仅限新用户",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“操作太复杂”与“找不到入口”是同一原因的不同表述，还是被替换掉的旧说法，讲者未明确"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 1,
+        "extraEdges": [
+          "老用户不受此问题影响 -contrasts-> 新用户找不到入口"
+        ],
+        "tentativeEdges": [
+          "操作太复杂 -causes-> 用户流失"
+        ],
+        "coverage": [
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "/(复杂|找不到入口)/",
+            "pass": true
+          },
+          {
+            "re": "/新用户/",
+            "pass": true
+          },
+          {
+            "re": "/老用户/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C03",
+      "rep": 4,
+      "request_id": "c03r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3715,
+      "usage": {
+        "prompt_tokens": 1466,
+        "completion_tokens": 855,
+        "total_tokens": 2321,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 186
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 8,
+      "scenes": 1,
+      "nodes": 4,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c03r4_1",
+            "title": "用户流失原因：入口难找",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "操作太复杂",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "新用户找不到入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "老用户不受此问题影响",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "新用户找不到入口",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "导致流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "操作太复杂",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "原说法（被修正）",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "老用户不受此问题影响",
+            "to": "新用户找不到入口",
+            "relation": "contrasts",
+            "label": "仅限新用户",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“操作太复杂”与“找不到入口”是同一原因的不同表述，还是两个并列原因，讲者未完全说清"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 1,
+        "extraEdges": [
+          "老用户不受此问题影响 -contrasts-> 新用户找不到入口"
+        ],
+        "tentativeEdges": [
+          "操作太复杂 -causes-> 用户流失"
+        ],
+        "coverage": [
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "/(复杂|找不到入口)/",
+            "pass": true
+          },
+          {
+            "re": "/新用户/",
+            "pass": true
+          },
+          {
+            "re": "/老用户/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C03",
+      "rep": 5,
+      "request_id": "c03r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3389,
+      "usage": {
+        "prompt_tokens": 1466,
+        "completion_tokens": 780,
+        "total_tokens": 2246,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 186
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 8,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c03r5_1",
+            "title": "用户流失原因：入口难找",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "新用户找不到入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "老用户不受此问题影响",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "新用户找不到入口",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "导致流失",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "老用户不受此问题影响",
+            "to": "新用户找不到入口",
+            "relation": "contrasts",
+            "label": "仅限新用户",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“操作太复杂”与“找不到入口”是否同一问题的不同表述，讲者未明确"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 1,
+        "extraEdges": [
+          "老用户不受此问题影响 -contrasts-> 新用户找不到入口"
+        ],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "/(复杂|找不到入口)/",
+            "pass": true
+          },
+          {
+            "re": "/新用户/",
+            "pass": true
+          },
+          {
+            "re": "/老用户/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C04",
+      "rep": 1,
+      "request_id": "c04r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2156,
+      "usage": {
+        "prompt_tokens": 1432,
+        "completion_tokens": 480,
+        "total_tokens": 1912,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 152
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 5,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c04r1_1",
+            "title": "界面更换与用户增长的关系待定",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "更换界面",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "用户增长",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "两者是否有关系",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "更换界面",
+            "to": "用户增长",
+            "relation": "sequence",
+            "label": "先换界面，后用户增长",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "更换界面与用户增长之间是否存在因果关系，讲者明确表示还不能确定"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(换界面|界面)/",
+            "pass": true
+          },
+          {
+            "re": "/(用户增长|增长)/",
+            "pass": true
+          },
+          {
+            "re": "/(不确定|不能确定|关系不明|没有关系)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C04",
+      "rep": 2,
+      "request_id": "c04r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2320,
+      "usage": {
+        "prompt_tokens": 1432,
+        "completion_tokens": 523,
+        "total_tokens": 1955,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 152
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c04r2_1",
+            "title": "界面更换与用户增长的关系待确认",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "先换了界面",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "后来用户增长了",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "两者有没有关系？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "先换了界面",
+            "to": "后来用户增长了",
+            "relation": "sequence",
+            "label": "先后发生",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "换界面与用户增长之间是否存在因果关系，讲者明确表示还不能确定"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(换界面|界面)/",
+            "pass": true
+          },
+          {
+            "re": "/(用户增长|增长)/",
+            "pass": true
+          },
+          {
+            "re": "/(不确定|不能确定|关系不明|没有关系)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C04",
+      "rep": 3,
+      "request_id": "c04r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2527,
+      "usage": {
+        "prompt_tokens": 1432,
+        "completion_tokens": 479,
+        "total_tokens": 1911,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 152
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 5,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c04r3_1",
+            "title": "界面更换与用户增长的关系待定",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "先更换界面",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "后来用户增长",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "两者是否有关系",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "先更换界面",
+            "to": "后来用户增长",
+            "relation": "sequence",
+            "label": "时间上先后发生",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "界面更换与用户增长之间是否存在因果关系，讲者明确表示还不能确定"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(换界面|界面)/",
+            "pass": true
+          },
+          {
+            "re": "/(用户增长|增长)/",
+            "pass": true
+          },
+          {
+            "re": "/(不确定|不能确定|关系不明|没有关系)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C04",
+      "rep": 4,
+      "request_id": "c04r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2580,
+      "usage": {
+        "prompt_tokens": 1432,
+        "completion_tokens": 521,
+        "total_tokens": 1953,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 152
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c04r4_1",
+            "title": "界面更换与用户增长的关系待定",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "先换了界面",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "后来用户增长了",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "两者有没有关系？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "先换了界面",
+            "to": "后来用户增长了",
+            "relation": "sequence",
+            "label": "先后发生",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "换界面与用户增长之间是否存在因果关系，讲话者明确表示还不能确定"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(换界面|界面)/",
+            "pass": true
+          },
+          {
+            "re": "/(用户增长|增长)/",
+            "pass": true
+          },
+          {
+            "re": "/(不确定|不能确定|关系不明|没有关系)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C04",
+      "rep": 5,
+      "request_id": "c04r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2410,
+      "usage": {
+        "prompt_tokens": 1432,
+        "completion_tokens": 524,
+        "total_tokens": 1956,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 152
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c04r5_1",
+            "title": "界面更换与用户增长的关系待定",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "更换界面",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "用户增长",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "两者是否有关系",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "更换界面",
+            "to": "用户增长",
+            "relation": "sequence",
+            "label": "先换界面，后用户增长",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "更换界面与用户增长之间是否存在因果关系，讲者明确表示还不能确定"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(换界面|界面)/",
+            "pass": true
+          },
+          {
+            "re": "/(用户增长|增长)/",
+            "pass": true
+          },
+          {
+            "re": "/(不确定|不能确定|关系不明|没有关系)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C05",
+      "rep": 1,
+      "request_id": "c05r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2089,
+      "usage": {
+        "prompt_tokens": 1396,
+        "completion_tokens": 375,
+        "total_tokens": 1771,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 244
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 4,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 0,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c05r1_1",
+            "title": "用户流失原因假设",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "价格太高",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          },
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "价格高是否导致流失？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [],
+        "unresolved": [
+          "价格太高与用户流失之间是否确为因果关系，讲话者以问句提出，尚未确认"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(价格|定价)/",
+            "pass": true
+          },
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "extra#0",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 question 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C05",
+      "rep": 2,
+      "request_id": "c05r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2429,
+      "usage": {
+        "prompt_tokens": 1396,
+        "completion_tokens": 524,
+        "total_tokens": 1920,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 244
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c05r2_1",
+            "title": "价格过高与用户流失的疑问",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "价格太高",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          },
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "价格高是否导致流失？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "价格太高",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "是否导致？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "价格过高与用户流失之间是否为真实因果关系，尚未确认"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "价格太高 -causes-> 用户流失"
+        ],
+        "coverage": [
+          {
+            "re": "/(价格|定价)/",
+            "pass": true
+          },
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "extra#0",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 question 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C05",
+      "rep": 3,
+      "request_id": "c05r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 1948,
+      "usage": {
+        "prompt_tokens": 1396,
+        "completion_tokens": 372,
+        "total_tokens": 1768,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 244
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 4,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 0,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c05r3_1",
+            "title": "价格过高与用户流失的疑问",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "价格太高",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          },
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "价格高是否导致流失？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [],
+        "unresolved": [
+          "价格过高与用户流失之间是否真有因果关系，讲话者只是提出疑问，尚未确认"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/(价格|定价)/",
+            "pass": true
+          },
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "extra#0",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 question 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C05",
+      "rep": 4,
+      "request_id": "c05r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2106,
+      "usage": {
+        "prompt_tokens": 1396,
+        "completion_tokens": 477,
+        "total_tokens": 1873,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 244
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 5,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c05r4_1",
+            "title": "价格过高与用户流失的猜测",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "价格太高",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          },
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "价格高导致流失？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "价格太高",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "是否导致？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "价格过高是否真的是用户流失的原因，尚未确认"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "价格太高 -causes-> 用户流失"
+        ],
+        "coverage": [
+          {
+            "re": "/(价格|定价)/",
+            "pass": true
+          },
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "extra#0",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 question 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C05",
+      "rep": 5,
+      "request_id": "c05r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2394,
+      "usage": {
+        "prompt_tokens": 1396,
+        "completion_tokens": 527,
+        "total_tokens": 1923,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 244
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c05r5_1",
+            "title": "价格过高是否导致用户流失",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "价格太高",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          },
+          {
+            "label": "用户流失",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "价格过高导致流失？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "价格太高",
+            "to": "用户流失",
+            "relation": "causes",
+            "label": "是否导致？",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "价格过高与用户流失之间是否真有因果关系，讲话者只是提问，尚未确认"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "价格太高 -causes-> 用户流失"
+        ],
+        "coverage": [
+          {
+            "re": "/(价格|定价)/",
+            "pass": true
+          },
+          {
+            "re": "/流失/",
+            "pass": true
+          },
+          {
+            "re": "extra#0",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 question 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C06",
+      "rep": 1,
+      "request_id": "c06r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2749,
+      "usage": {
+        "prompt_tokens": 1399,
+        "completion_tokens": 498,
+        "total_tokens": 1897,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 247
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 5,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c06r1_1",
+            "title": "统一入口的设想",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "统一入口",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "效果待验证",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "统一入口",
+            "to": "减少切换",
+            "relation": "converges_to",
+            "label": "意在",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "统一入口具体包含哪些功能、如何实现，尚未说明",
+          "效果如何验证、试什么，尚未说明"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "统一入口 -converges_to-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(统一入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(减少切换|切换)/",
+            "pass": true
+          },
+          {
+            "re": "/(试|验证|待|还不|需要)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 proposal 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C06",
+      "rep": 2,
+      "request_id": "c06r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2858,
+      "usage": {
+        "prompt_tokens": 1399,
+        "completion_tokens": 600,
+        "total_tokens": 1999,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 247
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c06r2_1",
+            "title": "统一入口设想",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "统一入口",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "效果待验证",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "统一入口",
+            "to": "减少切换",
+            "relation": "converges_to",
+            "label": "期望达成",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "from": "统一入口",
+            "to": "效果待验证",
+            "relation": "conditional",
+            "label": "效果需试验",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "统一入口具体指什么、如何减少切换尚未说明",
+          "效果如何试验、衡量标准未讲清"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "统一入口 -converges_to-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(统一入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(减少切换|切换)/",
+            "pass": true
+          },
+          {
+            "re": "/(试|验证|待|还不|需要)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 proposal 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C06",
+      "rep": 3,
+      "request_id": "c06r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2448,
+      "usage": {
+        "prompt_tokens": 1399,
+        "completion_tokens": 496,
+        "total_tokens": 1895,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 247
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 5,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c06r3_1",
+            "title": "统一入口设想",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "统一入口",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "效果待验证",
+            "claim_kind": "question",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "统一入口",
+            "to": "减少切换",
+            "relation": "converges_to",
+            "label": "期望带来",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "统一入口具体指什么、如何实现，尚未说明",
+          "减少切换的效果是否成立，需要试验验证"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "统一入口 -converges_to-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(统一入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(减少切换|切换)/",
+            "pass": true
+          },
+          {
+            "re": "/(试|验证|待|还不|需要)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 proposal 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C06",
+      "rep": 4,
+      "request_id": "c06r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3114,
+      "usage": {
+        "prompt_tokens": 1399,
+        "completion_tokens": 599,
+        "total_tokens": 1998,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 247
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c06r4_1",
+            "title": "统一入口的设想",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "统一入口",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "效果待验证",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "统一入口",
+            "to": "减少切换",
+            "relation": "converges_to",
+            "label": "意图指向",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "from": "统一入口",
+            "to": "效果待验证",
+            "relation": "conditional",
+            "label": "效果取决于试验",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "统一入口具体指什么、如何实现尚未说明",
+          "减少切换的效果尚未验证，需要试验"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "统一入口 -converges_to-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(统一入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(减少切换|切换)/",
+            "pass": true
+          },
+          {
+            "re": "/(试|验证|待|还不|需要)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 proposal 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C06",
+      "rep": 5,
+      "request_id": "c06r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2455,
+      "usage": {
+        "prompt_tokens": 1399,
+        "completion_tokens": 468,
+        "total_tokens": 1867,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 247
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 5,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 1,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c06r5_1",
+            "title": "统一入口设想",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "统一入口",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "减少切换",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          },
+          {
+            "label": "效果待验证",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "统一入口",
+            "to": "减少切换",
+            "relation": "converges_to",
+            "label": "期望达成",
+            "claim_kind": "proposal",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "统一入口能否真正减少切换、效果如何，讲话者明确表示还需试验，尚未确认"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "统一入口 -converges_to-> 减少切换"
+        ],
+        "coverage": [
+          {
+            "re": "/(统一入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(减少切换|切换)/",
+            "pass": true
+          },
+          {
+            "re": "/(试|验证|待|还不|需要)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": {
+          "pass": true,
+          "detail": "需要 proposal 状态的节点"
+        }
+      }
+    },
+    {
+      "case": "C07",
+      "rep": 1,
+      "request_id": "c07r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3880,
+      "usage": {
+        "prompt_tokens": 1441,
+        "completion_tokens": 884,
+        "total_tokens": 2325,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 161
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 10,
+      "scenes": 2,
+      "nodes": 5,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c07r1_1",
+            "title": "速度与理解：认知修正",
+            "family": "compare",
+            "status": "archived"
+          },
+          {
+            "id": "s_c07r1_2",
+            "title": "增长来源：入口而非低价",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "以前认为速度最重要",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "理解内容比速度更重要",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "低价",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "新入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "更多访问",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "以前认为速度最重要",
+            "to": "理解内容比速度更重要",
+            "relation": "contrasts",
+            "label": "后来修正",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "新入口",
+            "to": "更多访问",
+            "relation": "causes",
+            "label": "带来",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "低价",
+            "to": "更多访问",
+            "relation": "contrasts",
+            "label": "否定：非增长来源",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“增长”与“更多访问”是否等同，讲者未明确"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 2,
+        "extraEdges": [
+          "以前认为速度最重要 -contrasts-> 理解内容比速度更重要",
+          "低价 -contrasts-> 更多访问"
+        ],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/速度/",
+            "pass": true
+          },
+          {
+            "re": "/理解内容/",
+            "pass": true
+          },
+          {
+            "re": "/(新入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(低价|价格)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C07",
+      "rep": 2,
+      "request_id": "c07r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3568,
+      "usage": {
+        "prompt_tokens": 1441,
+        "completion_tokens": 891,
+        "total_tokens": 2332,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 161
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 10,
+      "scenes": 2,
+      "nodes": 5,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c07r2_1",
+            "title": "理解内容与速度的取舍",
+            "family": "compare",
+            "status": "archived"
+          },
+          {
+            "id": "s_c07r2_2",
+            "title": "增长来源：新入口而非低价",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "速度最重要（旧看法）",
+            "claim_kind": "quotation",
+            "state": "tentative"
+          },
+          {
+            "label": "理解内容更重要",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "低价",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          },
+          {
+            "label": "新入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "更多访问",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "速度最重要（旧看法）",
+            "to": "理解内容更重要",
+            "relation": "contrasts",
+            "label": "后来修正",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "新入口",
+            "to": "更多访问",
+            "relation": "causes",
+            "label": "带来",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "低价",
+            "to": "更多访问",
+            "relation": "contrasts",
+            "label": "被否定为增长来源",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "“增长”与“更多访问”是否等同，讲者未说明"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 2,
+        "extraEdges": [
+          "速度最重要（旧看法） -contrasts-> 理解内容更重要"
+        ],
+        "tentativeEdges": [
+          "低价 -contrasts-> 更多访问"
+        ],
+        "coverage": [
+          {
+            "re": "/速度/",
+            "pass": true
+          },
+          {
+            "re": "/理解内容/",
+            "pass": true
+          },
+          {
+            "re": "/(新入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(低价|价格)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C07",
+      "rep": 3,
+      "request_id": "c07r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 4084,
+      "usage": {
+        "prompt_tokens": 1441,
+        "completion_tokens": 894,
+        "total_tokens": 2335,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 161
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 10,
+      "scenes": 2,
+      "nodes": 5,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c07r3_1",
+            "title": "理解内容与速度的取舍",
+            "family": "compare",
+            "status": "archived"
+          },
+          {
+            "id": "s_c07r3_2",
+            "title": "增长来源：新入口而非低价",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "速度最重要（旧看法）",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "理解内容比速度更重要",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "低价",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          },
+          {
+            "label": "新入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "更多访问",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "速度最重要（旧看法）",
+            "to": "理解内容比速度更重要",
+            "relation": "contrasts",
+            "label": "后来修正",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "新入口",
+            "to": "更多访问",
+            "relation": "causes",
+            "label": "带来",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "低价",
+            "to": "更多访问",
+            "relation": "contrasts",
+            "label": "否定其致增长",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“增长”与“更多访问”是否同一指标，未说明"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 2,
+        "extraEdges": [
+          "速度最重要（旧看法） -contrasts-> 理解内容比速度更重要",
+          "低价 -contrasts-> 更多访问"
+        ],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/速度/",
+            "pass": true
+          },
+          {
+            "re": "/理解内容/",
+            "pass": true
+          },
+          {
+            "re": "/(新入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(低价|价格)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C07",
+      "rep": 4,
+      "request_id": "c07r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 4321,
+      "usage": {
+        "prompt_tokens": 1441,
+        "completion_tokens": 893,
+        "total_tokens": 2334,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 161
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 10,
+      "scenes": 2,
+      "nodes": 5,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c07r4_1",
+            "title": "理解内容与速度的取舍",
+            "family": "compare",
+            "status": "archived"
+          },
+          {
+            "id": "s_c07r4_2",
+            "title": "增长来源：新入口而非低价",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "以前认为速度最重要",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "后来认为理解内容更重要",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "低价",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "新入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "更多访问",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "edges": [
+          {
+            "from": "以前认为速度最重要",
+            "to": "后来认为理解内容更重要",
+            "relation": "contrasts",
+            "label": "观点转变",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "新入口",
+            "to": "更多访问",
+            "relation": "causes",
+            "label": "带来",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "低价",
+            "to": "更多访问",
+            "relation": "contrasts",
+            "label": "否定其带来增长",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“增长”与“更多访问”是否等同，讲者未明确说明"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 2,
+        "extraEdges": [
+          "以前认为速度最重要 -contrasts-> 后来认为理解内容更重要",
+          "低价 -contrasts-> 更多访问"
+        ],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/速度/",
+            "pass": true
+          },
+          {
+            "re": "/理解内容/",
+            "pass": true
+          },
+          {
+            "re": "/(新入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(低价|价格)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C07",
+      "rep": 5,
+      "request_id": "c07r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 4109,
+      "usage": {
+        "prompt_tokens": 1441,
+        "completion_tokens": 910,
+        "total_tokens": 2351,
+        "prompt_tokens_details": {
+          "cached_tokens": 1280
+        },
+        "prompt_cache_hit_tokens": 1280,
+        "prompt_cache_miss_tokens": 161
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 10,
+      "scenes": 2,
+      "nodes": 5,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c07r5_1",
+            "title": "理解内容比速度更重要",
+            "family": "compare",
+            "status": "archived"
+          },
+          {
+            "id": "s_c07r5_2",
+            "title": "增长来自新入口而非低价",
+            "family": "cause",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "速度最重要（旧看法）",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "理解内容更重要（新看法）",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "新入口",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "更多访问",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "label": "低价带来增长（被否定）",
+            "claim_kind": "hypothesis",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "速度最重要（旧看法）",
+            "to": "理解内容更重要（新看法）",
+            "relation": "contrasts",
+            "label": "看法转变",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "新入口",
+            "to": "更多访问",
+            "relation": "causes",
+            "label": "带来",
+            "claim_kind": "assertion",
+            "state": "supported"
+          },
+          {
+            "from": "低价带来增长（被否定）",
+            "to": "新入口",
+            "relation": "contrasts",
+            "label": "否定低价归因",
+            "claim_kind": "assertion",
+            "state": "supported"
+          }
+        ],
+        "unresolved": [
+          "“增长”与“更多访问”是否同一指标，未说明"
+        ]
+      },
+      "score": {
+        "required": 1,
+        "matched": 1,
+        "allowed": 2,
+        "extraEdges": [
+          "速度最重要（旧看法） -contrasts-> 理解内容更重要（新看法）",
+          "低价带来增长（被否定） -contrasts-> 新入口"
+        ],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/速度/",
+            "pass": true
+          },
+          {
+            "re": "/理解内容/",
+            "pass": true
+          },
+          {
+            "re": "/(新入口|入口)/",
+            "pass": true
+          },
+          {
+            "re": "/(低价|价格)/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C08",
+      "rep": 1,
+      "request_id": "c08r1",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3599,
+      "usage": {
+        "prompt_tokens": 1402,
+        "completion_tokens": 799,
+        "total_tokens": 2201,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 250
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 8,
+      "scenes": 1,
+      "nodes": 4,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c08r1_1",
+            "title": "数量级随时间递减",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "最初：几万",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "后来：几千",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "现在：只有几十",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "大概是这个量级",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "最初：几万",
+            "to": "后来：几千",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "后来：几千",
+            "to": "现在：只有几十",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "现在：只有几十",
+            "to": "大概是这个量级",
+            "relation": "converges_to",
+            "label": "量级概括",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "这几万、几千、几十指代的是什么对象，尚未说明",
+          "数量递减的原因未说明，不能推断因果"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "现在：只有几十 -converges_to-> 大概是这个量级"
+        ],
+        "coverage": [
+          {
+            "re": "/几万/",
+            "pass": true
+          },
+          {
+            "re": "/几千/",
+            "pass": true
+          },
+          {
+            "re": "/几十/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C08",
+      "rep": 2,
+      "request_id": "c08r2",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3970,
+      "usage": {
+        "prompt_tokens": 1402,
+        "completion_tokens": 814,
+        "total_tokens": 2216,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 250
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 8,
+      "scenes": 1,
+      "nodes": 4,
+      "edges": 3,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c08r2_1",
+            "title": "数量级随时间递减",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "最初：几万",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "后来：几千",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "现在：只有几十",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "量级判断：大概这个量级",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "最初：几万",
+            "to": "后来：几千",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "后来：几千",
+            "to": "现在：只有几十",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "现在：只有几十",
+            "to": "量级判断：大概这个量级",
+            "relation": "converges_to",
+            "label": "归入同一量级判断",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "“几万/几千/几十”指什么对象、什么单位，尚未说明",
+          "数量下降的原因未讲，不能推断因果"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [
+          "现在：只有几十 -converges_to-> 量级判断：大概这个量级"
+        ],
+        "coverage": [
+          {
+            "re": "/几万/",
+            "pass": true
+          },
+          {
+            "re": "/几千/",
+            "pass": true
+          },
+          {
+            "re": "/几十/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C08",
+      "rep": 3,
+      "request_id": "c08r3",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 3280,
+      "usage": {
+        "prompt_tokens": 1402,
+        "completion_tokens": 693,
+        "total_tokens": 2095,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 250
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 7,
+      "scenes": 1,
+      "nodes": 4,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c08r3_1",
+            "title": "数量级随时间递减",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "最初几万",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "后来几千",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "现在只有几十",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "大概是这个量级",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "最初几万",
+            "to": "后来几千",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "后来几千",
+            "to": "现在只有几十",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "这些数字指代的对象是什么（人数、数量还是其他），讲话者未说明",
+          "数量递减的原因未说明，不能推断因果"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/几万/",
+            "pass": true
+          },
+          {
+            "re": "/几千/",
+            "pass": true
+          },
+          {
+            "re": "/几十/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C08",
+      "rep": 4,
+      "request_id": "c08r4",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2355,
+      "usage": {
+        "prompt_tokens": 1402,
+        "completion_tokens": 563,
+        "total_tokens": 1965,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 250
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 6,
+      "scenes": 1,
+      "nodes": 3,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c08r4_1",
+            "title": "数量级随时间递减",
+            "family": "convergence",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "最初：几万",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "后来：几千",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "现在：只有几十",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "最初：几万",
+            "to": "后来：几千",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "后来：几千",
+            "to": "现在：只有几十",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "这些数量指什么对象、为何递减，讲话者未说明"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/几万/",
+            "pass": true
+          },
+          {
+            "re": "/几千/",
+            "pass": true
+          },
+          {
+            "re": "/几十/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    },
+    {
+      "case": "C08",
+      "rep": 5,
+      "request_id": "c08r5",
+      "status": "ok",
+      "reason": null,
+      "model": "deepseek-flash",
+      "latency_ms": 2995,
+      "usage": {
+        "prompt_tokens": 1402,
+        "completion_tokens": 694,
+        "total_tokens": 2096,
+        "prompt_tokens_details": {
+          "cached_tokens": 1152
+        },
+        "prompt_cache_hit_tokens": 1152,
+        "prompt_cache_miss_tokens": 250
+      },
+      "committed": {
+        "ok": true,
+        "code": null
+      },
+      "ops": 7,
+      "scenes": 1,
+      "nodes": 4,
+      "edges": 2,
+      "graph": {
+        "scenes": [
+          {
+            "id": "s_c08r5_1",
+            "title": "数量级随时间递减",
+            "family": "text",
+            "status": "active"
+          }
+        ],
+        "nodes": [
+          {
+            "label": "最初：几万",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "后来：几千",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "现在：只有几十",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "label": "大概是这个量级",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "edges": [
+          {
+            "from": "最初：几万",
+            "to": "后来：几千",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          },
+          {
+            "from": "后来：几千",
+            "to": "现在：只有几十",
+            "relation": "sequence",
+            "label": "随后",
+            "claim_kind": "assertion",
+            "state": "tentative"
+          }
+        ],
+        "unresolved": [
+          "这些数字指代的对象是什么（人数、数量还是别的），讲话者没有说明",
+          "数量递减的原因未说明，不能推断因果"
+        ]
+      },
+      "score": {
+        "required": 0,
+        "matched": 0,
+        "allowed": 0,
+        "extraEdges": [],
+        "tentativeEdges": [],
+        "coverage": [
+          {
+            "re": "/几万/",
+            "pass": true
+          },
+          {
+            "re": "/几千/",
+            "pass": true
+          },
+          {
+            "re": "/几十/",
+            "pass": true
+          }
+        ],
+        "coverageRate": 1,
+        "violations": [],
+        "extraCheck": null
+      }
+    }
+  ]
+}

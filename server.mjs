@@ -6,6 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { callDirector, loadKey } from './director.mjs';
 import { transcribe, asrStatus, warmAsr } from './asr.mjs';
+import { understand, validateUnderstandRequest } from './semantic-director.mjs';
+import { LIMITS } from './public/semantic/protocol.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
@@ -107,6 +109,33 @@ const server = createServer(async (req, res) => {
       const out = await transcribe(wav, { priority: mode });
       console.log(`[asr] ${mode.padEnd(7)} ${String(out.ms).padStart(5)}ms ${String(out.duration).padStart(5)}s ${out.text}`);
       return send(res, 200, JSON.stringify({ ...out, mode }));
+    }
+
+    if (url.pathname === '/api/understand' && req.method === 'POST') {
+      requireType(req, /^application\/json/);
+      let body;
+      try {
+        body = JSON.parse((await readBody(req, LIMITS.maxBodyBytes)) || '{}');
+      } catch (err) {
+        if (err instanceof HttpError) throw err;
+        throw new HttpError(400, 'invalid JSON');
+      }
+      const check = validateUnderstandRequest(body);
+      if (!check.ok) throw new HttpError(400, `invalid request: ${check.errors.slice(0, 4).join('; ')}`);
+
+      const ac = new AbortController();
+      res.on('close', () => {
+        if (!res.writableEnded) ac.abort();
+      });
+      const out = await understand({ request: body, signal: ac.signal });
+      const meta = out.meta || {};
+      const payload = out.response || { ...out };
+      delete payload.meta;
+      console.log(
+        `[understand] ${body.request_id} ${payload.status.padEnd(8)} ${String(meta.latency_ms ?? 0).padStart(4)}ms ` +
+          `ops=${(payload.ops || []).length} tokens=${meta.usage?.total_tokens ?? '-'}${payload.reason ? ` reason=${payload.reason}` : ''}`
+      );
+      return send(res, 200, JSON.stringify(payload));
     }
 
     if ((url.pathname === '/api/direct' || url.pathname === '/api/direct/stream') && req.method === 'POST') {
