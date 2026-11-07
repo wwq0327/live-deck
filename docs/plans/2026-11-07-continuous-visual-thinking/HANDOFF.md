@@ -2,6 +2,8 @@
 
 日期：2026-11-07。目标：按照 [产品要求](README.md) 增加持续理解与动态关系可视化。本文是实施交接，不代表开发完成。
 
+GitHub 总任务：[#21](https://github.com/wwq0327/live-deck/issues/21)。第一项：[#22（S01）](https://github.com/wwq0327/live-deck/issues/22)。第一阶段 #22—#31，后续 #32—#33；完整依赖见 [Issue 清单](issues/README.md)。
+
 ## 1. 接手前必读
 
 按顺序读本文件、[产品要求](README.md)、[架构](architecture.md)、[协议](protocol.md)、[验收](acceptance.md)，再读自己当前 Issue。对应 GitHub 编号见 [任务清单](issues/README.md)。
