@@ -18,6 +18,15 @@ const CLEAN = params.get('clean') === '1';
 const AUTOPLAY = params.get('autoplay') === '1';
 if (CLEAN) document.body.classList.add('clean');
 
+/* ?mode=semantic：复用本文件的麦克风/VAD/ASR，把转写事件交给语义账本。
+   默认模式不受影响。 */
+const SEMANTIC_MODE = params.get('mode') === 'semantic';
+let sem = null;
+if (SEMANTIC_MODE) {
+  const { startSemantic } = await import('./semantic/app.js');
+  sem = startSemantic({ deck, liveLabel, latEl, capEl, capWrap });
+}
+
 const DEFAULT_ACCENT = '#FF5A2B';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -352,6 +361,7 @@ const slideClass = (slide) =>
 const flat = (x) => String(x || '').replace(/[\s\p{P}\p{S}]/gu, '').toLowerCase();
 
 function show(raw, opts = {}) {
+  if (SEMANTIC_MODE) return;
   if (!raw) return;
   // 同一句话被 VAD 切成两段时，别翻出一模一样的两页
   const cur = state.current;
@@ -514,6 +524,13 @@ const lastSentence = (t) =>
 const same = (a, b) => a && b && a.layout === b.layout && a.title === b.title;
 
 async function commit(text, t0, snapshot) {
+  if (SEMANTIC_MODE) {
+    const value = String(text || '').trim();
+    if (!value) return;
+    caption(value, 'final');
+    sem?.manual(value);
+    return;
+  }
   text = String(text || '').trim();
   if (!text) return;
   state.transcript = (state.transcript + ' ' + text).trim();
@@ -532,6 +549,7 @@ async function commit(text, t0, snapshot) {
 }
 
 async function decide(startedAt, snapshot, expectedEpoch, textOverride, transcriptOverride) {
+  if (SEMANTIC_MODE) return;
   if (expectedEpoch !== undefined && expectedEpoch !== epoch) return;
   const myEpoch = epoch;
   state.busy = true;
@@ -658,6 +676,7 @@ const pickAccent = () => PICK[(state.n + 1) % PICK.length];
 
 // 本地立刻给一页（不等模型），先让画面动起来
 function provisional(text) {
+  if (SEMANTIC_MODE) return;
   dbg('prov?', state.live ? 'has' : 'none', state.busy ? 'busy' : 'idle', text.slice(0, 12));
   if (state.live || state.busy) return;
   const t = String(text).replace(/[，。！？、,.!?：:；;\s]+$/, '').trim();
@@ -701,6 +720,7 @@ function applyAhead(text, r) {
 }
 
 async function prethink(partialText) {
+  if (SEMANTIC_MODE) return;
   const t = String(partialText || '').trim();
   if (t.length < 8 || aheadBusy) return;
   const myEpoch = epoch;
@@ -780,7 +800,15 @@ const vad = {
   partialText: '', partialLen: 0, partialAt: 0,
 };
 
-const setLive = (t) => { liveLabel.textContent = t || '待机'; };
+// 语义模式：音频段创建时就有自己的 ID/order，不等 ASR 响应。
+let semSegment = null;
+let semSegSeq = 0;
+let semOrder = 0;
+
+const setLive = (t) => {
+  if (SEMANTIC_MODE) { sem?.status(t); return; }
+  liveLabel.textContent = t || '待机';
+};
 const concat = (list) => {
   let n = 0;
   for (const c of list) n += c.length;
@@ -796,6 +824,7 @@ function clearVad() {
   vad.pre = []; vad.preLen = 0;
   vad.silence = 0; vad.voiced = 0; vad.noise = 0.004;
   vad.partialText = ''; vad.partialLen = 0; vad.partialAt = 0;
+  semSegment = null;
 }
 
 function float32ToWav(f32, sr) {
@@ -853,6 +882,7 @@ function firePartial() {
   const ctrl = new AbortController();
   partialCtrl = ctrl;
   asrInflight.add(ctrl);
+  const seg = semSegment;
   const job = postAudio(audio, 'partial', ctrl.signal)
     .then((r) => {
       if (myEpoch !== epoch || !vad.active) return;
@@ -861,8 +891,22 @@ function firePartial() {
         vad.partialLen = len;
         vad.partialAt = performance.now();
         caption(r.text, 'interim');
-        provisional(r.text);
-        prethink(r.text);
+        if (SEMANTIC_MODE) {
+          // 迟到的 partial（段已关闭）不能再改写 final。
+          if (seg && seg === semSegment) {
+            seg.revision += 1;
+            sem?.push({
+              segment_id: seg.id,
+              order: seg.order,
+              revision: seg.revision,
+              phase: 'partial',
+              text: r.text,
+            });
+          }
+        } else {
+          provisional(r.text);
+          prethink(r.text);
+        }
       }
     })
     .catch(() => {})
@@ -883,7 +927,7 @@ function cancelPartial() {
   pendingPartial = null;
 }
 
-async function finishSegment(audio, t0, snapshot) {
+async function finishSegment(audio, t0, snapshot, semMeta = null) {
   const myEpoch = epoch;
   cancelPartial();
   if (myEpoch !== epoch) return;
@@ -897,7 +941,22 @@ async function finishSegment(audio, t0, snapshot) {
   try {
     const r = await postAudio(audio, 'final', ctrl.signal);
     if (myEpoch !== epoch) return;
-    if (r.text) commit(r.text, t0, snapshot);
+    if (SEMANTIC_MODE) {
+      if (r.text) {
+        caption(r.text, 'final');
+        if (semMeta) {
+          sem?.push({
+            segment_id: semMeta.segment_id,
+            order: semMeta.order,
+            revision: semMeta.revision,
+            phase: 'final',
+            text: r.text,
+          });
+        }
+      } else {
+        caption('（这句没听清，再说一次）', 'hold');
+      }
+    } else if (r.text) commit(r.text, t0, snapshot);
     else caption('（这句没听清，再说一次）', 'hold');
   } catch (err) {
     if (myEpoch !== epoch) return;
@@ -910,6 +969,11 @@ async function finishSegment(audio, t0, snapshot) {
 
 function closeSegment() {
   dbg('close', Math.round(vad.segLen / SR * 10) / 10 + 's');
+  const closedSegment = semSegment;
+  semSegment = null;
+  const semMeta = closedSegment
+    ? { segment_id: closedSegment.id, order: closedSegment.order, revision: closedSegment.revision + 1 }
+    : null;
   const t0 = performance.now();
   const snapshot = state.live;
   state.live = null;
@@ -922,7 +986,7 @@ function closeSegment() {
   const audio = f.subarray(0, keep);
   vad.seg = []; vad.segLen = 0; vad.silence = 0; vad.voiced = 0;
   if (audio.length / SR < 0.45) return;
-  finishSegment(audio, t0, snapshot);
+  finishSegment(audio, t0, snapshot, semMeta);
 }
 
 let playToken = 0;
@@ -1022,6 +1086,11 @@ function processChunk(chunk) {
         state.ahead = null;
         state.live = null;
         state.seg += 1;
+        if (SEMANTIC_MODE) {
+          semSegSeq += 1;
+          semOrder += 1;
+          semSegment = { id: `v${semSegSeq}`, order: semOrder, revision: 0 };
+        }
         setLive('听');
       }
     } else {
@@ -1235,6 +1304,7 @@ async function typeOut(line, token) {
 }
 
 async function runDemo() {
+  if (SEMANTIC_MODE) { sem?.demo(); return; }
   if (demoRunning) { stopDemo(); return; }
   const token = ++demoToken;
   demoRunning = true;
@@ -1289,6 +1359,13 @@ function reset({ keepDemo = false } = {}) {
   setLive('待机');
 
   idxEl.textContent = '00';
+  if (SEMANTIC_MODE) {
+    sem?.reset();
+    latEl.textContent = '—';
+    latEl.classList.remove('hit', 'warn');
+    caption('');
+    return;
+  }
   deck.innerHTML = '';
   latEl.textContent = '—';
   latEl.classList.remove('hit');
@@ -1301,6 +1378,7 @@ $('#reset').addEventListener('click', () => {
 });
 
 function standby() {
+  if (SEMANTIC_MODE) return;
   show({
     standby: true,
     layout: 'title',
@@ -1419,7 +1497,9 @@ const SAMPLE = {
   },
 };
 
-if (PREVIEW) {
+if (SEMANTIC_MODE) {
+  // 语义模式由 app.js 负责首屏；这里不渲染旧的 standby 页。
+} else if (PREVIEW) {
   document.body.classList.add('clean');
   show({ ...(SAMPLE[PREVIEW] || SAMPLE.title), pinned: true });
 } else {

@@ -12,6 +12,7 @@ const DEFAULT_CONFIG = {
   retryDelayMs: 150,
   retryTransient: true,
   maxRecompute: 3,
+  recomputeBackoffMs: 400,
   maxEvents: 400,
   requestIdPrefix: 'r',
   endpoint: '/api/understand',
@@ -43,10 +44,12 @@ export class SemanticScheduler {
     this.store = store;
     this.ledger = ledger;
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.fetchImpl = fetchImpl;
+    // 同样避免以 scheduler 为 this 调用宿主 fetch。
+    this.fetchImpl = fetchImpl ? (input, init) => fetchImpl(input, init) : null;
     this.now = now;
-    this.setTimeout = setTimeoutImpl;
-    this.clearTimeout = clearTimeoutImpl;
+    // 以箭头函数持有计时器，避免浏览器把 this===scheduler 当成宿主调用而报 Illegal invocation。
+    this.setTimeout = (fn, ms) => setTimeoutImpl(fn, ms);
+    this.clearTimeout = (id) => clearTimeoutImpl(id);
     this.onCommit = onCommit;
     this.onEvent = onEvent;
 
@@ -58,6 +61,7 @@ export class SemanticScheduler {
     this.firstDirtyAt = 0;
     this.retryAvailable = true;
     this.recomputeBudget = this.config.maxRecompute;
+    this.staleRecomputes = 0;
     this.sequence = 0;
     this.state = 'idle';
     this.lastStatus = null;
@@ -108,6 +112,7 @@ export class SemanticScheduler {
     this.halted = null;
     this.retryAvailable = true;
     this.recomputeBudget = this.config.maxRecompute;
+    this.staleRecomputes = 0;
     this.#setState('idle');
     if (this.ledger.hasPendingInput()) this.notify('resume');
   }
@@ -127,6 +132,7 @@ export class SemanticScheduler {
     for (const inv of result.invalidations || []) {
       this.store.invalidateSource(inv.segment_id, inv.revision, { reason: inv.reason });
     }
+    if (result.entry?.phase === 'final') this.staleRecomputes = 0;
     this.notify(result.invalidations?.length ? 'revision' : 'transcript');
   }
 
@@ -339,8 +345,25 @@ export class SemanticScheduler {
     if (!result.ok) {
       this.store.abortRequest(request.request_id);
       this.counters.rejected += 1;
-      this.#record('rejected', { request_id: request.request_id, code: result.code, detail: result.detail, latency_ms: latency });
-      if (result.code === 'version_conflict' || result.code === 'source_changed') {
+      const detail = Array.isArray(result.detail)
+        ? result.detail.join('; ')
+        : result.detail || (result.errors || []).join('; ');
+      this.#record('rejected', { request_id: request.request_id, code: result.code, detail, latency_ms: latency });
+      if (result.code === 'source_changed') {
+        // 讲话中的 partial 会不断改写来源。旧响应必须作废，但这不是“坏批”，
+        // 更不能让连续讲话永久停摆：退避后用最新状态重算，pending 一直保留。
+        this.staleRecomputes += 1;
+        const over = this.staleRecomputes - this.config.maxRecompute;
+        const delay = over > 0 ? Math.min(1500, this.config.recomputeBackoffMs * over) : this.config.retryDelayMs;
+        this.#setState('recomputing');
+        this.#clearTimer();
+        this.timer = this.setTimeout(() => {
+          this.timer = null;
+          this.#startRequest({ recompute: true });
+        }, delay);
+        return;
+      }
+      if (result.code === 'version_conflict') {
         this.recomputeBudget -= 1;
         if (this.recomputeBudget > 0) {
           this.#setState('recomputing');
@@ -360,6 +383,7 @@ export class SemanticScheduler {
 
     this.retryAvailable = true;
     this.recomputeBudget = this.config.maxRecompute;
+    this.staleRecomputes = 0;
     this.counters.committed += 1;
     const consumed = this.ledger.markConsumed(response.considered || []);
     if (consumed) this.#record('consumed', { considered: (response.considered || []).length });

@@ -290,3 +290,60 @@
 }
 .sem-edge[data-dir='converge'] .sem-edge-line { stroke: rgba(120, 214, 235, 0.78); }
 .sem-edge[data-dir='part'] .sem-edge-line { stroke: rgba(190, 224, 120, 0.62); }
+
+/* ---------- 整页语义模式（?mode=semantic） ---------- */
+body.semantic {
+  --accent: #4fe08d;
+  background: #020c08;
+}
+body.semantic #glow { display: none; }
+body.semantic #idx { display: none; }
+body.semantic #live {
+  left: auto;
+  right: 40px;
+  top: 26px;
+  letter-spacing: 0.12em;
+}
+body.semantic #stage { overflow: visible; }
+body.semantic #deck { inset: 22px 26px 118px; }
+body.semantic #caption {
+  bottom: 118px;
+  font-size: 22px;
+  color: rgba(232, 246, 238, 0.8);
+}
+body.semantic #caption.interim { color: rgba(232, 246, 238, 0.45); }
+body.semantic #bar { background: rgba(6, 26, 18, 0.82); border-color: rgba(120, 189, 149, 0.22); }
+body.semantic #bar button { border-color: rgba(120, 189, 149, 0.28); }
+body.semantic #bar input { border-color: rgba(120, 189, 149, 0.24); }
+body.semantic #bar input::placeholder { color: rgba(157, 184, 169, 0.5); }
+
+.sem-banner {
+  position: fixed;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: min(760px, 84vw);
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(30, 18, 8, 0.9);
+  border: 1px solid rgba(255, 180, 84, 0.35);
+  color: #ffe9c7;
+  font-size: 13px;
+  line-height: 1.6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  backdrop-filter: blur(10px);
+}
+.sem-banner[hidden] { display: none; }
+.sem-banner button {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 210, 150, 0.5);
+  background: transparent;
+  color: #ffe9c7;
+  font: inherit;
+  cursor: pointer;
+}

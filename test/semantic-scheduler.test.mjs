@@ -402,3 +402,29 @@ test('连续讲话（压缩到 1.5 秒）：最多一个在途，final 全部消
   assert.equal(s.diagnostics.counters.requests, requests.length);
   s.stop();
 });
+
+test('连续 partial 让多批响应过期时不永久停摆，最终按最新 revision 提交', async () => {
+  const env = makeEnv();
+  const net = makeNet();
+  const s = makeScheduler(net, env, { debounceMs: 5, retryDelayMs: 5, maxRecompute: 1, recomputeBackoffMs: 5 });
+  s.start();
+  env.ledger.ingest(event(env.ledger, 'seg1', 1, 'partial', '资料放在微信', 1));
+  await waitForRequest(net);
+  const first = net.take();
+  env.ledger.ingest(event(env.ledger, 'seg1', 2, 'partial', '资料放在微信和文档', 1));
+  first.resolve(json(reply(first.body)));
+  await waitForRequest(net);
+  const second = net.take();
+  env.ledger.ingest(event(env.ledger, 'seg1', 3, 'partial', '资料放在微信、文档和表格', 1));
+  second.resolve(json(reply(second.body)));
+  await waitForRequest(net);
+  const third = net.take();
+  assert.equal(third.body.sources[0].revision, 3);
+  assert.equal(s.diagnostics.halted, null, 'must not halt while the speaker keeps revising');
+  third.resolve(json(reply(third.body)));
+  await waitFor(() => env.ledger.pendingCount() === 0, { timeoutMs: 1500 });
+  assert.equal(s.diagnostics.halted, null);
+  assert.equal(s.diagnostics.counters.rejected, 2);
+  assert.equal(env.ledger.receipts().seg1, 3);
+  s.stop();
+});
