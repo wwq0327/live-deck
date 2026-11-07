@@ -488,3 +488,57 @@ test('人工撤回节点会级联撤回边，且整批只递增一次版本', ()
   assert.equal(store.snapshot().edges[e].state, 'retracted');
   assert.equal(store.graphVersion, before + 1);
 });
+
+test('同一 partial 段 ASR 改写：引用证据仍逐字存在则接受并记到最新 revision', () => {
+  const { ledger, store } = makeEnv();
+  seedSegments(ledger, ['第一段已经结束。']);
+  ledger.ingest({
+    kind: 'transcript', epoch: 1, segment_id: 's2', order: 1, revision: 1, phase: 'partial',
+    text: '资料放在微信，文档和表格里，所以找东西时我得来回切换',
+  });
+  const request = buildRequest(store, ledger, 'r1');
+  assert.equal(store.beginRequest(request).ok, true);
+  ledger.ingest({
+    kind: 'transcript', epoch: 1, segment_id: 's2', order: 1, revision: 2, phase: 'partial',
+    text: '资料放在微信、文档和表格里，找东西我得来回切换',
+  });
+  const sceneId = makeId('scene', 'r1', 1);
+  const ev = [evidence('s2', '文档和表格', 1)];
+  const out = store.commit({
+    schema_version: SCHEMA_VERSION,
+    request_id: 'r1', epoch: 1, base_graph_version: 0, input_version: request.input_version,
+    status: 'ok', considered: [{ segment_id: 's2', revision: 1 }],
+    ops: [scene('r1', 1, '资料分散'), node('r1', 2, sceneId, '文档和表格分散', ev)],
+    unresolved: [],
+  }, request, { ledger });
+  assert.equal(out.ok, true, JSON.stringify(out.errors));
+  assert.deepEqual(out.consumed, [{ segment_id: 's2', revision: 2 }]);
+  assert.equal(store.snapshot().receipts.s2, 2);
+});
+
+test('同一 partial 段 ASR 改掉了引用证据：整批拒绝', () => {
+  const { ledger, store } = makeEnv();
+  seedSegments(ledger, ['第一段已经结束。']);
+  ledger.ingest({
+    kind: 'transcript', epoch: 1, segment_id: 's2', order: 1, revision: 1, phase: 'partial',
+    text: '资料放在微信，文档和表格里，所以找东西时我得来回切换',
+  });
+  const request = buildRequest(store, ledger, 'r1');
+  assert.equal(store.beginRequest(request).ok, true);
+  ledger.ingest({
+    kind: 'transcript', epoch: 1, segment_id: 's2', order: 1, revision: 2, phase: 'partial',
+    text: '资料放在一个地方，找东西不用切换',
+  });
+  const sceneId = makeId('scene', 'r1', 1);
+  const ev = [evidence('s2', '文档和表格', 1)];
+  const out = store.commit({
+    schema_version: SCHEMA_VERSION,
+    request_id: 'r1', epoch: 1, base_graph_version: 0, input_version: request.input_version,
+    status: 'ok', considered: [{ segment_id: 's2', revision: 1 }],
+    ops: [scene('r1', 1, '资料分散'), node('r1', 2, sceneId, '文档和表格分散', ev)],
+    unresolved: [],
+  }, request, { ledger });
+  assert.equal(out.ok, false);
+  assert.equal(out.code, 'source_changed');
+  assert.equal(store.graphVersion, 0);
+});

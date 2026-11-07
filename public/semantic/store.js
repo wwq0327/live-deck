@@ -523,12 +523,47 @@ export class SemanticStore {
     }
 
     // 依赖的 source revision 必须仍是当前账本版本；单纯新增输入不影响。
+    // 例外：ASR partial 只是向后延长（旧文本是新文本前缀）时，旧判断仍成立，
+    // 允许提交并把 receipt 记到新 revision，避免连续讲话时永远被 source_changed 饿死。
+    // final 覆盖不适用（final 的尾部可能带来新信息），仍然要求重算。
+    const upgraded = new Map();
+    const quotesBySegment = new Map();
+    const collectEvidence = (value) => {
+      if (!value || typeof value !== 'object') return;
+      if (Array.isArray(value)) {
+        value.forEach(collectEvidence);
+        return;
+      }
+      if (value.segment_id && typeof value.quote === 'string') {
+        if (!quotesBySegment.has(value.segment_id)) quotesBySegment.set(value.segment_id, []);
+        quotesBySegment.get(value.segment_id).push(value.quote);
+        return;
+      }
+      Object.values(value).forEach(collectEvidence);
+    };
+    collectEvidence([response.ops || [], response.unresolved || []]);
     if (ledger) {
       const changed = [];
       for (const s of request.sources || []) {
         const cur = ledger.current(s.segment_id);
-        if (!cur || cur.revision !== s.revision) changed.push(`${s.segment_id}@${s.revision}`);
-        else if (cur.text !== s.text) changed.push(`${s.segment_id}@${s.revision}#text`);
+        if (!cur) {
+          changed.push(`${s.segment_id}@${s.revision}`);
+          continue;
+        }
+        if (cur.revision === s.revision) {
+          if (cur.text !== s.text) changed.push(`${s.segment_id}@${s.revision}#text`);
+          continue;
+        }
+        const sameText = cur.revision > s.revision && cur.text.trim() === s.text.trim();
+        const grewPartial =
+          cur.phase === 'partial' && cur.revision > s.revision && cur.text.trim().startsWith(s.text.trim());
+        // ASR 会在同一 partial 段里改写个别词。只要本次引用的证据仍然逐字存在，
+        // 该批判断就仍然有据；否则视为语义纠正，要求重算。
+        const quotes = quotesBySegment.get(s.segment_id) || [];
+        const quotesSurvive =
+          cur.phase === 'partial' && cur.revision > s.revision && quotes.length > 0 && quotes.every((q) => cur.text.includes(q));
+        if (sameText || grewPartial || quotesSurvive) upgraded.set(s.segment_id, cur.revision);
+        else changed.push(`${s.segment_id}@${s.revision}`);
       }
       if (changed.length) return fail('source_changed', changed);
     }
@@ -548,7 +583,12 @@ export class SemanticStore {
       evidence: u.evidence || [],
       at: Date.now(),
     }));
-    for (const c of considered) next.receipts[c.segment_id] = c.revision;
+    const consumed = [];
+    for (const c of considered) {
+      const revision = upgraded.get(c.segment_id) || c.revision;
+      next.receipts[c.segment_id] = revision;
+      consumed.push({ segment_id: c.segment_id, revision });
+    }
     next.history.push({
       at: Date.now(),
       request_id: request.request_id,
@@ -570,6 +610,7 @@ export class SemanticStore {
       committed: true,
       applied: applied,
       status: response.status,
+      consumed,
       state: this.snapshot(),
     };
   }

@@ -92,13 +92,13 @@ function layeredGeometry(nodes, edges, { width, height, padding }) {
   const { columns, maxRank } = assignColumns(nodes, edges);
   const gutter = 80;
   const colCount = maxRank + 1;
-  const colWidth = Math.max(180, (width - padding * 2 - gutter * (colCount - 1)) / colCount);
+  const colWidth = 300;
   const byId = new Map();
   for (const [rank, list] of columns) {
     list.sort((a, b) => (a.created_at || 0) - (b.created_at || 0) || String(a.id).localeCompare(String(b.id)));
     const sizes = list.map((n) => nodeSize(n.label));
     const totalHeight = sizes.reduce((sum, s) => sum + s.height, 0) + Math.max(0, list.length - 1) * 26;
-    let y = Math.max(padding, (height - totalHeight) / 2);
+    let y = padding;
     list.forEach((node, i) => {
       const size = sizes[i];
       const x = padding + rank * (colWidth + gutter) + (colWidth - size.width) / 2;
@@ -223,7 +223,7 @@ export function layoutText(nodes, edges = [], { width = 1200, height = 680, padd
   const left = Math.round((width - maxWidth) / 2);
   const sizes = nodes.map((n) => nodeSize(n.label, { minWidth: Math.min(320, maxWidth), maxWidth }));
   const total = sizes.reduce((sum, s) => sum + s.height, 0) + Math.max(0, nodes.length - 1) * 24;
-  let y = Math.max(padding, (height - total) / 2);
+  let y = padding;
   const placed = nodes.map((node, i) => {
     const size = sizes[i];
     const entry = { ...placeNode(node.id, left, y, node.label, { rank: i }), width: size.width, height: size.height };
@@ -255,29 +255,23 @@ export function layoutCompare(nodes, edges, { width = 1200, height = 680 } = {})
 
   const gutter = 96;
   const rowGap = 44;
-  const pairWidths = pairs.map(({ left, right }) => {
-    const l = nodeSize(left.label);
-    const r = right ? nodeSize(right.label) : null;
-    return r ? l.width + gutter + r.width : l.width;
-  });
-  const contentWidth = Math.max(...pairWidths);
-  const left = Math.max(40, (width - contentWidth) / 2);
+  const colWidth = 300;
+  const left = 80;
   const heights = pairs.map(({ left, right }) => Math.max(nodeSize(left.label).height, right ? nodeSize(right.label).height : 0));
   const total = heights.reduce((a, b) => a + b, 0) + rowGap * Math.max(0, pairs.length - 1);
-  let y = Math.max(120, (height - total) / 2);
+  let y = 140;
 
   const placed = [];
   const outEdges = [];
   pairs.forEach(({ edge, left: leftNode, right: rightNode }, index) => {
     const lSize = nodeSize(leftNode.label);
     const rSize = rightNode ? nodeSize(rightNode.label) : null;
-    const rowWidth = rSize ? lSize.width + gutter + rSize.width : lSize.width;
-    const rowLeft = left + (contentWidth - rowWidth) / 2;
+    const rowLeft = left + (colWidth - lSize.width) / 2;
     const rowHeight = heights[index];
     const ly = y + (rowHeight - lSize.height) / 2;
     placed.push({ ...placeNode(leftNode.id, rowLeft, ly, leftNode.label, { rank: 0 }) });
-    if (rightNode) {
-      const rx = rowLeft + lSize.width + gutter;
+    if (rightNode && edge) {
+      const rx = left + colWidth + gutter + (colWidth - rSize.width) / 2;
       const ry = y + (rowHeight - rSize.height) / 2;
       placed.push({ ...placeNode(rightNode.id, rx, ry, rightNode.label, { rank: 1 }) });
       const x1 = rowLeft + lSize.width;
@@ -359,7 +353,7 @@ export function layoutComposition(nodes, edges, { width = 1200, height = 680 } =
   let cursorY = 104;
   for (const specsRow of rows) {
     const rowWidth = specsRow.reduce((sum, s) => sum + s.boxW, 0) + boxGap * (specsRow.length - 1);
-    let x = Math.max(40, (width - rowWidth) / 2);
+    let x = 80;
     const rowH = Math.max(...specsRow.map((s) => s.boxH));
     for (const spec of specsRow) {
       const boxY = cursorY + (rowH - spec.boxH) / 2;
@@ -419,8 +413,8 @@ export function layoutComposition(nodes, edges, { width = 1200, height = 680 } =
 
   if (loose.length) {
     const maxW = Math.max(...loose.map((n) => nodeSize(n.label).width));
-    const left = Math.max(40, (width - maxW) / 2);
-    let y = Math.max(cursorY, height - loose.reduce((sum, n) => sum + nodeSize(n.label).height, 0) - (loose.length - 1) * 18 - 60);
+    const left = 80;
+    let y = Math.max(cursorY, 140);
     for (const n of loose) {
       placed.push(placeNode(n.id, left, y, n.label));
       y += nodeSize(n.label).height + 18;
@@ -447,7 +441,7 @@ export function layoutConvergence(nodes, edges, { width = 1200, height = 680 } =
   const sourceTotal = sourceNodes.reduce((sum, n) => sum + nodeSize(n.label).height, 0) + sourceGap * Math.max(0, sourceNodes.length - 1);
   const targetTotal = targetNodes.reduce((sum, n) => sum + nodeSize(n.label).height, 0) + 24 * Math.max(0, targetNodes.length - 1);
   const blockH = Math.max(sourceTotal, targetTotal, 160);
-  const top = Math.max(110, (height - blockH) / 2);
+  const top = 140;
   const leftX = Math.max(48, width * 0.08);
   const rightX = Math.max(leftX + 320, width * 0.62);
 

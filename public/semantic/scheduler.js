@@ -8,7 +8,8 @@
 const DEFAULT_CONFIG = {
   debounceMs: 300,
   maxWaitMs: 800,
-  clientTimeoutMs: 6000,
+  clientTimeoutMs: 13000,
+  maxSourcesPerRequest: 3,
   retryDelayMs: 150,
   retryTransient: true,
   maxRecompute: 3,
@@ -196,7 +197,7 @@ export class SemanticScheduler {
       this.#degrade('epoch_mismatch', 'ledger epoch differs from store epoch');
       return null;
     }
-    const built = this.ledger.buildSources({ nowMs: this.now() });
+    const built = this.ledger.buildSources({ nowMs: this.now(), maxSources: this.config.maxSourcesPerRequest });
     if (!built.sources.length) {
       this.#setState('idle');
       return null;
@@ -385,8 +386,9 @@ export class SemanticScheduler {
     this.recomputeBudget = this.config.maxRecompute;
     this.staleRecomputes = 0;
     this.counters.committed += 1;
-    const consumed = this.ledger.markConsumed(response.considered || []);
-    if (consumed) this.#record('consumed', { considered: (response.considered || []).length });
+    const receiptList = result && result.consumed ? result.consumed : response.considered || [];
+    const consumed = this.ledger.markConsumed(receiptList);
+    if (consumed) this.#record('consumed', { considered: receiptList.length });
     const applied = result.applied === true;
     const event = this.#record('commit', {
       request_id: request.request_id,
@@ -510,7 +512,7 @@ export class SemanticScheduler {
             age_ms: built.backlog.ageMs,
           }
         : null,
-      events: this.events.slice(-30),
+      events: this.events.slice(-this.config.maxEvents),
     };
   }
 }

@@ -305,7 +305,7 @@ body.semantic #live {
   letter-spacing: 0.12em;
 }
 body.semantic #stage { overflow: visible; }
-body.semantic #deck { inset: 22px 26px 118px; }
+body.semantic #deck { inset: 108px 26px 118px; }
 body.semantic #caption {
   bottom: 118px;
   font-size: 22px;

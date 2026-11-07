@@ -152,7 +152,7 @@ test('重复 partial 不触发新请求', async () => {
 test('超过 sources 上限时不静默丢弃 final：先发有界批，再排空积压', async () => {
   const env = makeEnv();
   const net = makeNet();
-  const s = makeScheduler(net, env, { debounceMs: 5 });
+  const s = makeScheduler(net, env, { debounceMs: 5, maxSourcesPerRequest: 24 });
   for (let i = 1; i <= 30; i++) {
     env.ledger.ingest(event(env.ledger, `seg${i}`, 1, 'final', `第${i}条独立观点，需要进入账本`, i));
   }
@@ -403,7 +403,7 @@ test('连续讲话（压缩到 1.5 秒）：最多一个在途，final 全部消
   s.stop();
 });
 
-test('连续 partial 让多批响应过期时不永久停摆，最终按最新 revision 提交', async () => {
+test('连续 partial 只是延长时直接提交，receipt 记到最新 revision', async () => {
   const env = makeEnv();
   const net = makeNet();
   const s = makeScheduler(net, env, { debounceMs: 5, retryDelayMs: 5, maxRecompute: 1, recomputeBackoffMs: 5 });
@@ -413,18 +413,17 @@ test('连续 partial 让多批响应过期时不永久停摆，最终按最新 r
   const first = net.take();
   env.ledger.ingest(event(env.ledger, 'seg1', 2, 'partial', '资料放在微信和文档', 1));
   first.resolve(json(reply(first.body)));
+  await waitFor(() => env.ledger.receipts().seg1 === 2, { timeoutMs: 1500 });
+  assert.equal(s.diagnostics.halted, null);
+
+  env.ledger.ingest(event(env.ledger, 'seg1', 3, 'partial', '资料放在微信、文档和表格', 1));
   await waitForRequest(net);
   const second = net.take();
-  env.ledger.ingest(event(env.ledger, 'seg1', 3, 'partial', '资料放在微信、文档和表格', 1));
+  assert.equal(second.body.sources[0].revision, 3);
   second.resolve(json(reply(second.body)));
-  await waitForRequest(net);
-  const third = net.take();
-  assert.equal(third.body.sources[0].revision, 3);
-  assert.equal(s.diagnostics.halted, null, 'must not halt while the speaker keeps revising');
-  third.resolve(json(reply(third.body)));
   await waitFor(() => env.ledger.pendingCount() === 0, { timeoutMs: 1500 });
   assert.equal(s.diagnostics.halted, null);
-  assert.equal(s.diagnostics.counters.rejected, 2);
+  assert.equal(s.diagnostics.counters.rejected, 0, 'prefix growth is not a semantic correction');
   assert.equal(env.ledger.receipts().seg1, 3);
   s.stop();
 });

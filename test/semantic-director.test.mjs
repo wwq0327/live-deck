@@ -91,7 +91,7 @@ test('无 Key 直接降级，不请求上游', async () => {
 
 test('截断输出整批拒绝，无部分 ops', async () => {
   const { request, s1 } = makeRequest();
-  const { impl } = fakeFetch({
+  const { impl, calls } = fakeFetch({
     content: '{"status":"ok","considered":[{"segment_id":"seg1","revision":1}],"ops":[{"op":"create_scene"',
     finish_reason: 'length',
   });
@@ -99,7 +99,10 @@ test('截断输出整批拒绝，无部分 ops', async () => {
   assert.equal(out.response.status, 'degraded');
   assert.equal(out.response.reason, 'invalid_output');
   assert.deepEqual(out.response.ops, []);
-  assert.equal(out.meta.usage.total_tokens, 123);
+  assert.equal(out.meta.usage.total_tokens, 246, 'truncation retries once and merges usage');
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].body.max_tokens, 2240);
+  assert.match(calls[1].body.messages.at(-1).content, /最多 8 个操作/);
 });
 
 test('非法 JSON、空内容、hold 带 ops、ops 超限都降级', async () => {

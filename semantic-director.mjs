@@ -14,7 +14,7 @@ import { loadKey } from './director.mjs';
 
 const API = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
 const MODEL = process.env.SEMANTIC_DIRECTOR_MODEL || process.env.DIRECTOR_MODEL || 'deepseek-flash';
-const TIMEOUT_MS = Number(process.env.SEMANTIC_DIRECTOR_TIMEOUT_MS || 8000);
+const TIMEOUT_MS = Number(process.env.SEMANTIC_DIRECTOR_TIMEOUT_MS || 12000);
 const MAX_TOKENS = Number(process.env.SEMANTIC_DIRECTOR_MAX_TOKENS || 1400);
 
 const SYSTEM = `你是现场「语义导演」。演讲者在持续讲话，你把已经到达的原文片断变成一张不断生长的关系图。
@@ -39,7 +39,7 @@ op 类型：
 
 硬规则：
 1. evidence.quote 必须逐字出现在你看到的 sources 中，并带对 segment_id 与 revision；不得改写原文来凑证据。标签可以概括，但证据不能编。
-2. 只有原文明确表达因果（因为/所以/导致/造成/使得等，或语义上确凿）才建 causes 边；先后发生不等于因果，相关不等于因果，问句/设想不等于已确认原因。证据不足就不要连边，或把 claim_kind 设为 hypothesis/question 且 state 为 tentative。
+2. 只有原文明确表达因果（因为/所以/导致/造成/使得等，或语义上确凿）才建 causes 边；先后发生不等于因果，相关不等于因果，问句/设想不等于已确认原因。证据不足或讲话者明确表示不确定（问句、假设、“还不能确定关系”）时，不要建 causes 边，哪怕 tentative 也不要；把假设写成 question/hypothesis 节点，把未决写进 unresolved。
 3. 问题、设想、引用保留自己的 claim_kind；不确定的事用 tentative 或 hold，不得写成 supported 的断言。
 4. 不伪造数字、比例、外部统计；口述概数（几万、几十）保留概数，不写成精确值。
 5. 新 ID 只能用 request_id 命名空间：s_<request_id>_<序号>、n_<request_id>_<序号>、e_<request_id>_<序号>。已有对象必须沿用 context 中的 ID，标签修正不要换 ID。相同标签不代表同一对象。
@@ -50,8 +50,10 @@ op 类型：
 10. 输出必须是完整合法 JSON；一旦超预算或写不完，宁可少给几条完整 op，也不要截断。
 11. 只输出增量：context 里已经存在、本次没有真正改变的节点和边不要重复 upsert；只有修正文字/关系/状态时才用已有 ID 引用它们。
 12. 新观点优先用 create_scene 建续接场景承载（通常 6 条 op 以内），不要为了“更新”而重写旧场景；接近 12 条时把次要细节留给后续请求或 unresolved。
-13. 讲话者说“前面那个”“刚才那个”时，只有当最近 4 个归档场景里有唯一明确对象才可沿用其 ID；指代不清或超出范围时不要猜，status=hold、ops=[]，把问题写进 unresolved。修改归档场景不改变当前场景。
-14. context 中 manual=true 的对象是讲者人工更正过的：除非新原话明确推翻它，否则沿用其标签与关系，不要用自动推断改回。
+14. 节点只画讲话中具体出现的对象、判断、数据或假设；不要生成“需要更多信息”“先把问题记下”“待验证假设不得当作已确认原因”这类流程/方法说明，也不要画“如何理解”的元评论。未决内容只写 unresolved，不建节点。
+15. 讲者明确表达不确定时，节点用「可能…」「是否…？」这类原话措辞并设 claim_kind=hypothesis/question；不要把不确定内容改写成确定结论，也不要把“待验证”本身画成一个对象。
+16. 讲话者说“前面那个”“刚才那个”时，只有当最近 4 个归档场景里有唯一明确对象才可沿用其 ID；指代不清或超出范围时不要猜，status=hold、ops=[]，把问题写进 unresolved。修改归档场景不改变当前场景。
+17. context 中 manual=true 的对象是讲者人工更正过的：除非新原话明确推翻它，否则沿用其标签与关系，不要用自动推断改回。
 
 只处理 ops 能表达的事实；没有新信息就返回 {"status":"hold","considered":[...],"ops":[],"unresolved":[]}。`;
 
@@ -223,40 +225,87 @@ export async function understand({
     else signal.addEventListener('abort', onAbort, { once: true });
   }
 
-  try {
+  const callOnce = async (messages, max_tokens) => {
     const r = await fetchImpl(`${apiBase.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
       signal: controller.signal,
       headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
       body: JSON.stringify({
         model,
-        messages: buildMessages(request),
+        messages,
         response_format: { type: 'json_object' },
         thinking: { type: 'disabled' },
         temperature: 0.2,
-        max_tokens: maxTokens,
+        max_tokens,
         stream: false,
       }),
     });
+    return { r, json: r.ok ? await r.json() : null };
+  };
+  const mergeUsage = (a, b) => {
+    if (!a) return b || null;
+    if (!b) return a;
+    return {
+      ...a,
+      prompt_tokens: (a.prompt_tokens || 0) + (b.prompt_tokens || 0),
+      completion_tokens: (a.completion_tokens || 0) + (b.completion_tokens || 0),
+      total_tokens: (a.total_tokens || 0) + (b.total_tokens || 0),
+      prompt_cache_hit_tokens: (a.prompt_cache_hit_tokens || 0) + (b.prompt_cache_hit_tokens || 0),
+    };
+  };
+
+  try {
+    const baseMessages = buildMessages(request);
+    let usage = null;
+    let { r, json } = await callOnce(baseMessages, maxTokens);
+    usage = json?.usage || null;
     if (!r.ok) {
       return {
         response: degraded(request, 'upstream_error', { detail: `api ${r.status}` }),
         meta: { latency_ms: Date.now() - t0, model },
       };
     }
-    const json = await r.json();
+    const countOps = (content) => {
+      try {
+        const parsed = JSON.parse(content);
+        return Array.isArray(parsed.ops) ? parsed.ops.length : 0;
+      } catch {
+        return 0;
+      }
+    };
+    const firstChoice = json.choices?.[0];
+    const overLimit = countOps(firstChoice?.message?.content) > 12;
+    if (firstChoice?.finish_reason === 'length' || overLimit) {
+      const concise = [
+        ...baseMessages,
+        {
+          role: 'user',
+          content: '上一次输出过长或操作超过 12 个。请重发完整 JSON：最多 8 个操作，只保留核心因果和修正，其余写进 unresolved；不要重复未改变的旧对象。',
+        },
+      ];
+      const second = await callOnce(concise, Math.min(2400, Math.round(maxTokens * 1.6)));
+      if (!second.r.ok) {
+        return {
+          response: degraded(request, 'upstream_error', { detail: `api ${second.r.status}` }),
+          meta: { latency_ms: Date.now() - t0, model, usage },
+        };
+      }
+      usage = mergeUsage(usage, second.json.usage);
+      r = second.r;
+      json = second.json;
+    }
     const choice = json.choices?.[0];
     if (choice?.finish_reason === 'length') {
       return {
         response: degraded(request, 'invalid_output', { detail: 'truncated' }),
-        meta: { latency_ms: Date.now() - t0, model, usage: json.usage || null },
+        meta: { latency_ms: Date.now() - t0, model, usage },
       };
     }
     const parsed = failReason(choice?.message?.content);
     if (parsed.reason) {
       return {
         response: degraded(request, parsed.reason, { detail: parsed.detail }),
-        meta: { latency_ms: Date.now() - t0, model, usage: json.usage || null },
+        meta: { latency_ms: Date.now() - t0, model, usage },
       };
     }
     const model_ = parsed.model;
@@ -264,7 +313,7 @@ export async function understand({
     if (bad) {
       return {
         response: degraded(request, 'invalid_output', { detail: bad }),
-        meta: { latency_ms: Date.now() - t0, model, usage: json.usage || null },
+        meta: { latency_ms: Date.now() - t0, model, usage },
       };
     }
     const response = {
@@ -280,7 +329,7 @@ export async function understand({
     };
     return {
       response,
-      meta: { latency_ms: Date.now() - t0, model, usage: json.usage || null },
+      meta: { latency_ms: Date.now() - t0, model, usage },
     };
   } catch (err) {
     const reason = timedOut ? 'timeout' : aborted ? 'client_abort' : 'upstream_error';

@@ -396,3 +396,16 @@ test('节点与边可键盘聚焦，人工标记写入 ARIA 与 data 属性', ()
   assert.equal(edgeEl.dataset.manual, 'true');
   assert.ok(container.children.length >= 1);
 });
+
+test('对比场景有未配对节点时不崩溃，全部节点仍然可见', () => {
+  const doc = makeDoc();
+  const container = makeContainer(doc, { width: 1200, height: 680 });
+  const r = new SemanticRenderer(container, { doc, animate: false, width: 1200, height: 680 });
+  const state = baseState({ family: 'compare' });
+  state.scenes.s1.node_ids = ['n1', 'n2', 'n3'];
+  state.nodes.n3 = { ...state.nodes.n1, id: 'n3', label: '未配对的观点' };
+  state.scenes.s1.edge_ids = ['e1'];
+  state.edges.e1 = { ...state.edges.e1, relation: 'contrasts', from: 'n1', to: 'n2' };
+  r.render(state, { animate: false });
+  assert.deepEqual([...r.elements().nodes.keys()].sort(), ['n1', 'n2', 'n3']);
+});
